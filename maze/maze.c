@@ -115,8 +115,11 @@ corner_check(unsigned int x, unsigned int y)
 /*
  * Check for directions that should be avoided, which are outside the
  * grid, and to a visited cell.
+ *
+ * Bits for directions in which there's an edge of the maze or an empty
+ * cell will be set.
  */
-unsigned short
+unsigned char
 avoid_check(unsigned int x, unsigned int y)
 {
    unsigned char ret = edge_check(x, y);
@@ -134,6 +137,36 @@ avoid_check(unsigned int x, unsigned int y)
       ret |= W_WALL;
    }
    if (!(ret & E_WALL) && !*mazecell(x + 1, y))
+   {
+      ret |= E_WALL;
+   }
+   return ret;
+}
+
+/*
+ * Bits for directions in which there's an edge of the maze or a filled
+ * cell will be set.
+ *
+ * Direction bits set to zero are empty cells.
+ */
+unsigned char
+filledcell_check(unsigned int x, unsigned int y)
+{
+   unsigned char ret = edge_check(x, y);
+
+   if (!(ret & N_WALL) && *mazecell(x, y - 1))
+   {
+      ret |= N_WALL;
+   }
+   if (!(ret & S_WALL) && *mazecell(x, y + 1))
+   {
+      ret |= S_WALL;
+   }
+   if (!(ret & W_WALL) && *mazecell(x - 1, y))
+   {
+      ret |= W_WALL;
+   }
+   if (!(ret & E_WALL) && *mazecell(x + 1, y))
    {
       ret |= E_WALL;
    }
@@ -165,11 +198,18 @@ step()
       {
          for (MAZE.Y = 0; MAZE.Y < MAZE_HEIGHT; MAZE.Y++)
          {
+            /*
+             * If the current cell is visited, keep searching.
+             */
             if (!*mazecell(MAZE.X, MAZE.Y))
             {
                continue;
             }
-            if ((avoid = avoid_check(MAZE.X, MAZE.Y)) != 0b1111)
+            /*
+             * Break if the current cell hasn't been visited (already
+             * checked) but it's adjacent to a visited cell.
+             */
+            if (filledcell_check(MAZE.X, MAZE.Y) != 0b1111)
             {
                goto _considered_harmful;
             }
@@ -177,7 +217,12 @@ step()
       }
    }
 
-_considered_harmful:
+   /*
+    * Move anywhere but to an edge. Try to avoid moving to already visited
+    * cells, but it's possible to move to visited cells???
+    */
+
+   _considered_harmful:
    if (avoid == 0b1111 &&
          MAZE.X == MAZE_WIDTH &&
          MAZE.Y == MAZE_HEIGHT)
@@ -188,6 +233,16 @@ _considered_harmful:
    do
    {
       choice = 1 << mrand(0, 3);
+      if (avoid == 0b1111)
+      {
+         /*
+          * Just pick a random empty cell.
+          */
+         if (~filledcell_check(MAZE.X, MAZE.Y) & choice)
+         {
+            break;
+         }
+      }
    } while(choice & avoid);
 
 #ifdef _DEBUG
@@ -269,24 +324,7 @@ main()
 
    *mazecell(MAZE.X, MAZE.Y) = 0;
 
-   /*
-    * First pass.
-    */
-   while (step(0));
-
-   /*
-    * Second pass.
-    */
-   for (MAZE.Y = 0; MAZE.Y < MAZE_HEIGHT; MAZE.Y++)
-   {
-      for (MAZE.X = 0; MAZE.X < MAZE_WIDTH; MAZE.X++)
-      {
-         if (corner_check(MAZE.X, MAZE.Y))
-         {
-            *mazecell(MAZE.X, MAZE.Y) = 0;
-         }
-      }
-   }
+   while (step());
 
    print_maze();
 
