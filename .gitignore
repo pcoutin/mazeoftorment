@@ -1,3 +1,7 @@
 # compiled source
 *.o
 clc
+maze
+client/*.o
+client/clc
+maze/maze
