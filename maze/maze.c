@@ -85,8 +85,8 @@ edge_check(unsigned int x, unsigned int y)
    return ret;
 }
 
-unsigned short
-wall_check(unsigned int x, unsigned int y)
+int
+corner_check(unsigned int x, unsigned int y)
 {
    unsigned short ret = 0;
 
@@ -95,25 +95,21 @@ wall_check(unsigned int x, unsigned int y)
     * Thus, there's no need to worry about whether we're on an edge and
     * there is nothing to the right or left, or on the top or bottom.
     */
-   if (*(mazecell(x, y) + 1))
+   ret += *(mazecell(x, y) + 1) != 0;
+   ret += *(mazecell(x, y) - 1) != 0;
+   ret += *(mazecell(x, y) - MAZE.w) != 0;
+   ret += *(mazecell(x, y) - MAZE.w + 1) != 0;
+   ret += *(mazecell(x, y) - MAZE.w - 1) != 0;
+   ret += *(mazecell(x, y) + MAZE.w) != 0;
+   ret += *(mazecell(x, y) + MAZE.w + 1) != 0;
+   ret += *(mazecell(x, y) + MAZE.w - 1) != 0;
+
+   if (ret > 3)
    {
-      ret |= E_WALL;
-   }
-   if (*(mazecell(x, y) - 1))
-   {
-      ret |= W_WALL;
+      return 1;
    }
 
-   if (*(mazecell(x, y) - MAZE.w))
-   {
-      ret |= N_WALL;
-   }
-   if (*(mazecell(x, y) + MAZE.w))
-   {
-      ret |= S_WALL;
-   }
-
-   return ret;
+   return 0;
 }
 
 /*
@@ -158,11 +154,7 @@ mrand(int floor, int ceil)
 int
 step()
 {
-   /*
-    * Yes.
-    */
-   unsigned char avoid = avoid_check(MAZE.X, MAZE.Y);
-   unsigned char choice;
+   unsigned char choice, avoid = avoid_check(MAZE.X, MAZE.Y);
 
    /*
     * If we're stuck, hunt.
@@ -277,7 +269,25 @@ main()
 
    *mazecell(MAZE.X, MAZE.Y) = 0;
 
-   while (step());
+   /*
+    * First pass.
+    */
+   while (step(0));
+
+   /*
+    * Second pass.
+    */
+   for (MAZE.Y = 0; MAZE.Y < MAZE_HEIGHT; MAZE.Y++)
+   {
+      for (MAZE.X = 0; MAZE.X < MAZE_WIDTH; MAZE.X++)
+      {
+         if (corner_check(MAZE.X, MAZE.Y))
+         {
+            *mazecell(MAZE.X, MAZE.Y) = 0;
+         }
+      }
+   }
+
    print_maze();
 
    return 0;
