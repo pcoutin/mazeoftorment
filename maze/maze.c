@@ -155,7 +155,7 @@ mrand(int floor, int ceil)
  * It must have been unvisited. If stuck, hunt.
  * Also, don't jump off the edge.
  */
-void
+int
 step()
 {
    /*
@@ -169,9 +169,28 @@ step()
     */
    if (avoid == 0b1111)
    {
-      puts("\nWe're stuck!");
-      print_maze();
-      exit(0);
+      for (MAZE.X = 0; MAZE.X < MAZE_WIDTH; MAZE.X++)
+      {
+         for (MAZE.Y = 0; MAZE.Y < MAZE_HEIGHT; MAZE.Y++)
+         {
+            if (!*mazecell(MAZE.X, MAZE.Y))
+            {
+               continue;
+            }
+            if ((avoid = avoid_check(MAZE.X, MAZE.Y)) != 0b1111)
+            {
+               goto _considered_harmful;
+            }
+         }
+      }
+   }
+
+_considered_harmful:
+   if (avoid == 0b1111 &&
+         MAZE.X == MAZE_WIDTH &&
+         MAZE.Y == MAZE_HEIGHT)
+   {
+      return 0;
    }
 
    do
@@ -179,13 +198,14 @@ step()
       choice = 1 << mrand(0, 3);
    } while(choice & avoid);
 
+#ifdef _DEBUG
    printf("avoid, choice:\t");
    print_code(avoid);
    putchar('\t');
    putchar('\t');
    print_code(choice);
    putchar('\n');
-
+#endif
 
    switch (choice)
    {
@@ -208,6 +228,7 @@ step()
       default:
          fprintf(stderr, "wtf");
    }
+   return 1;
 }
 
 void
@@ -253,14 +274,16 @@ main()
     */
    MAZE.X = mrand(0, MAZE_WIDTH - 1);
    MAZE.Y = mrand(0, MAZE_HEIGHT - 1);
-   printf("wow my cell is at like %d, %d\n", MAZE.X, MAZE.Y);
+
    *mazecell(MAZE.X, MAZE.Y) = 0;
+
+   while (step());
    print_maze();
-   for(;;) { step(); print_maze(); }
 
    return 0;
 }
 
+#ifdef _DEBUG
 void
 print_code(unsigned char dc)
 {
@@ -270,3 +293,4 @@ print_code(unsigned char dc)
    if (dc & E_WALL) putchar('E');
    if (!dc) printf("NONE");
 }
+#endif
