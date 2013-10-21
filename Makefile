@@ -1,6 +1,6 @@
 CC=		cc
 CFLAGS=		-Os -c
-LDFLAGS=	-lSDL2-2.0
+LDFLAGS=	-L/usr/local/lib/ -lSDL2-2.0 -lSDL2_image
 
 OBJFILES=	ini.o main.o cfg.o
 

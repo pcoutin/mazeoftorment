@@ -1,20 +1,35 @@
-#include <SDL2/SDL.h>
-#include <GL/gl.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "clc.h"
+
+void
+drawPic(char *path, int x, int y)
+{
+   SDL_Surface *pic;
+   SDL_Texture *pictex;
+   SDL_Rect dstrect;
+
+   pic = IMG_Load(path);
+   pictex = SDL_CreateTextureFromSurface(renderer, pic);
+
+   dstrect.x = x;
+   dstrect.y = y;
+   dstrect.w = pic->w;
+   dstrect.h = pic->h;
+
+   SDL_FreeSurface(pic);
+   SDL_RenderCopy(renderer, pictex, NULL, &dstrect);
+}
+
 
 int
 main(int argc, char *argv[])
 {
    CLC_CONFIG config;
    SDL_Window *window;
-   SDL_Renderer *renderer;
-   SDL_Surface *surface;
 
    parsecfg("config.cfg", &config);
-   //SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
    window = SDL_CreateWindow(
          "box fun",
@@ -33,7 +48,6 @@ main(int argc, char *argv[])
    }
 
    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-   printf("renderer:\t0x%016x\n", renderer);
 
    int linx = 42, liny = 42;
 
@@ -54,13 +68,16 @@ main(int argc, char *argv[])
       }
 
       SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+
+      /*
+       * Draw things.
+       */
       SDL_RenderDrawLine(renderer, 2, 2, linx, liny);
+      drawPic("img/test.gif", linx, liny);
 
       SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
       SDL_RenderPresent(renderer);
    }
-
-   sleep(10);
 
    SDL_DestroyWindow(window);
    SDL_Quit();
