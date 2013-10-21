@@ -28,7 +28,7 @@ cfg_handler(void *user, const char *section,
    return 1;
 }
 
-int
+void
 parsecfg(const char *fname, CLC_CONFIG *config)
 {
    FILE *cfile;
@@ -43,7 +43,14 @@ parsecfg(const char *fname, CLC_CONFIG *config)
    /*
     * Attempt to parse config file.
     */
-   ini_parse(fname, cfg_handler, config);
-
-   return 0;
+   switch (ini_parse(fname, cfg_handler, config))
+   {
+      case 0:
+         break;
+      case -1:
+         fprintf(stderr, "Error opening config file %s\n", CFG_FNAME);
+         break;
+      default:
+         fprintf(stderr, "Error parsing config file %s\n", CFG_FNAME);
+   }
 }

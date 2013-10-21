@@ -6,17 +6,17 @@ OBJFILES=	ini.o main.o cfg.o
 
 all:	clc
 
-ini:
+clc:	ini.o main.o cfg.o
+	${CC} ${LDFLAGS} -o clc ${OBJFILES}
+
+ini.o:
 	make -C inih all
 
-main:
+main.o: main.c
 	${CC} ${CFLAGS} main.c
 
-cfg:
+cfg.o: cfg.c
 	${CC} ${CFLAGS} cfg.c
-
-clc:	ini main cfg
-	${CC} ${LDFLAGS} -o clc ${OBJFILES}
 
 clean:
 	rm *.o clc

@@ -39,7 +39,7 @@ main(int argc, char *argv[])
    SDL_Window *window;
    PICTURE face;
 
-   parsecfg("config.cfg", &config);
+   parsecfg(CFG_FNAME, &config);
 
    window = SDL_CreateWindow(
          "box fun",
