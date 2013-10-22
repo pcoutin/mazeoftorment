@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <locale.h>
 #include "mot_server.h"
 
 #define N_WALL          0b0001
@@ -229,6 +230,93 @@ step()
    return 1;
 }
 
+/*
+ * Checks what edges the cell pointed to by the argument has, in the
+ * context of the whole maze (walls and passages).
+ * 0: no edges. 255: out of range.
+ */
+static MCELL
+edgecheck(MCELL *c)
+{
+   MCELL ret = 0;
+   size_t curr = (size_t) (c - MAZE.data);
+
+   if (c > MAZE.data + MAZE.size)
+   {
+      return 255;
+   }
+
+   if (curr % MAZE.w == MAZE.w - 1)
+   {
+      ret |= E_WALL;
+   }
+   else if (curr % MAZE.w == 0)
+   {
+      ret |= W_WALL;
+   }
+
+   if (curr < MAZE.w)
+   {
+      ret |= N_WALL;
+   }
+   else if (curr > MAZE.size - MAZE.w)
+   {
+      ret |= S_WALL;
+   }
+
+   return ret;
+}
+
+/*
+ * Types of maze tiles:
+ *
+ * A    B    C      D     E       F      G      H    I      J    K       
+ *                                                
+ * |        |        |          --|--    |    |---  ---|                    
+ * |  ----  ----  ----    |       |    --|--  |        |  |        |       
+ * |        |        |  __|__            |                |---  ---|        
+ *
+ * A: N_WALL | S_WALL
+ * B: E_WALL | W_WALL
+ * C: N_WALL | S_WALL | E_WALL
+ * D: N_WALL | S_WALL | W_WALL
+ * E: N_WALL | E_WALL | W_WALL
+ * F: S_WALL | E_WALL | W_WALL
+ * G: N_WALL | S_WALL | E_WALL | W_WALL
+ * H: S_WALL | E_WALL
+ * I: S_WALL | W_WALL
+ * J: N_WALL | E_WALL
+ * K: N_WALL | W_WALL
+ *
+ * Lone wall: just remove it
+ */
+static MCELL
+setintersect_type(MCELL *curr)
+{
+   MCELL ret = 0, ec = edgecheck(curr);
+
+   if (!(edgecheck(curr) & N_WALL) && *(curr - MAZE.w))
+   {
+      ret |= N_WALL;
+   }
+   if (!(edgecheck(curr) & S_WALL) && *(curr + MAZE.w))
+   {
+      ret |= S_WALL;
+   }
+   if (!(edgecheck(curr) & E_WALL) && *(curr + 1))
+   {
+      ret |= E_WALL;
+   }
+   if (!(edgecheck(curr) & W_WALL) && *(curr - 1))
+   {
+      ret |= W_WALL;
+   }
+   if (*curr)
+   {
+      *curr = ret;
+   }
+}
+
 void
 genmaze(unsigned int width, unsigned int height)
 {
@@ -266,7 +354,6 @@ genmaze(unsigned int width, unsigned int height)
    {
       case N_WALL:
 
-         puts("North wall");
          for (
             MAZE.X = mrand(0, MAZE.width - 2);
             *mazecell(MAZE.X, 0);
@@ -313,6 +400,11 @@ genmaze(unsigned int width, unsigned int height)
    /*
     * Find kinds of tree intersections
     */
+   for (i = 0; i < MAZE.size; i++)
+   {
+      setintersect_type(MAZE.data + i);
+   }
+
 }
 
 #ifdef _DEBUG
@@ -320,7 +412,7 @@ genmaze(unsigned int width, unsigned int height)
 int
 main()
 {
-   genmaze(20, 20);
+   genmaze(80, 40);
 
    printf("maze is %d bytes long.\n", MAZE.size);
 
@@ -340,10 +432,9 @@ print_code(unsigned char dc)
 }
 
 static void
-print_maze()
+print_maze_old()
 {
    size_t i;
-   *(MAZE.data + 1621) = 123;
    for (i = 0; i < MAZE.size; i++)
    {
       if (*(MAZE.data + i))
@@ -362,4 +453,67 @@ print_maze()
       }
    }
 }
+
+static void
+print_maze()
+{
+   size_t i;
+
+   freopen(NULL, "w", stdout);
+
+   for (i = 0; i < MAZE.size; i++)
+   {
+      switch (*(MAZE.data + i))
+      {
+         case N_WALL:
+         case S_WALL:
+         case N_WALL | S_WALL:
+            printf("│");
+            break;
+         case E_WALL:
+         case W_WALL:
+         case E_WALL | W_WALL:
+            printf("─");
+            break;
+         case W_WALL | N_WALL | S_WALL:
+            printf("┤");
+            break;
+         case E_WALL | N_WALL | S_WALL:
+            printf("├");
+            break;
+         case E_WALL | W_WALL | N_WALL:
+            printf("┴");
+            break;
+         case E_WALL | W_WALL | S_WALL:
+            printf("┬");
+            break;
+         case E_WALL | W_WALL | N_WALL | S_WALL:
+            printf("┼");
+            break;
+         case S_WALL | E_WALL:
+            printf("┌");
+            break;
+         case N_WALL | E_WALL:
+            printf("└");
+            break;
+         case N_WALL | W_WALL:
+            printf("┘");
+            break;
+         case S_WALL | W_WALL:
+            printf("┐");
+            break;
+         case 0:
+            putchar(' ');
+            break;
+         default:
+            fprintf(stderr, ":(\n");
+      }
+      if (i % MAZE.w == MAZE.w - 1)
+      {
+         putchar('\n');
+      }
+   }
+}
+
+            
 #endif
