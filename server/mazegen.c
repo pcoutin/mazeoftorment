@@ -410,9 +410,20 @@ genmaze(unsigned int width, unsigned int height)
 #ifdef _DEBUG
 
 int
-main()
+main(int argc, char *argv[])
 {
-   genmaze(80, 40);
+   unsigned int w, h;
+
+   if (argc != 3)
+   {
+      fprintf(stderr, "Usage: %s [width] [height]\n", argv[0]);
+      return 1;
+   }
+
+   w = atoi(argv[1]);
+   h = atoi(argv[2]);
+
+   genmaze(w, h);
 
    printf("maze is %d bytes long.\n", MAZE.size);
 
