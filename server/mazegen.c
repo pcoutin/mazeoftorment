@@ -170,6 +170,10 @@ step()
    /*
     * Move anywhere but to an edge. Try to avoid moving to already visited
     * cells, but it's possible to move to visited cells???
+    *
+    * Found out through gdb: Somehow, if the loop ends without breaking,
+    * MAZE.X and MAZE.Y are set to the width and height, respectively. But
+    * why?
     */
 
    _considered_harmful:
@@ -196,12 +200,12 @@ step()
    } while(choice & avoid);
 
 #ifdef _DEBUG
-   printf("avoid, choice:\t");
+/*   printf("avoid, choice:\t");
    print_code(avoid);
    putchar('\t');
    putchar('\t');
    print_code(choice);
-   putchar('\n');
+   putchar('\n'); */
 #endif
 
    switch (choice)
@@ -221,9 +225,6 @@ step()
       case E_WALL:
          *(mazecell(MAZE.X, MAZE.Y) + 1) = 0;
          *mazecell(++MAZE.X, MAZE.Y) = 0;
-         break;
-      default:
-         fprintf(stderr, "wtf");
    }
    return 1;
 }
@@ -264,27 +265,53 @@ genmaze(unsigned int width, unsigned int height)
    switch (1 << mrand(0, 3))
    {
       case N_WALL:
-         for (MAZE.X = 0; *mazecell(MAZE.X, 0); ++MAZE.X);
-         *(mazecell(MAZE.X, 0) - MAZE.width) = 0;
+
+         puts("North wall");
+         for (
+            MAZE.X = mrand(0, MAZE.width - 2);
+            *mazecell(MAZE.X, 0);
+            ++MAZE.X
+         );
+
+         *(mazecell(MAZE.X, 0) - MAZE.w) = 0;
          break;
 
       case S_WALL:
-         for (MAZE.X = 0; *mazecell(MAZE.X, MAZE.height - 1); ++MAZE.X);
-         *(mazecell(MAZE.X, MAZE.height - 1) + MAZE.width) = 0;
+
+         for (
+            MAZE.X = mrand(0, MAZE.width - 2);
+            *mazecell(MAZE.X, MAZE.height - 1);
+            ++MAZE.X
+         );
+
+         *(mazecell(MAZE.X, MAZE.height - 1) + MAZE.w) = 0;
          break;
 
       case E_WALL:
-         for (MAZE.Y = 0; *mazecell(MAZE.width - 1, MAZE.Y); ++MAZE.Y);
+
+         for (
+            MAZE.Y = mrand(0, MAZE.height - 2);
+            *mazecell(MAZE.width - 1, MAZE.Y);
+            ++MAZE.Y
+         );
+
          *(mazecell(MAZE.width - 1, MAZE.Y) + 1) = 0;
          break;
 
       case W_WALL:
-         for (MAZE.Y = 0; *mazecell(MAZE.width - 1, MAZE.Y); ++MAZE.Y);
-         *(mazecell(MAZE.width - 1, MAZE.Y) + 1) = 0;
+
+         for (
+            MAZE.Y = mrand(0, MAZE.height - 2);
+            *mazecell(0, MAZE.Y);
+            ++MAZE.Y
+         );
+
+         *(mazecell(0, MAZE.Y) - 1) = 0;
+         break;
    }
 
    /*
-    * Find what kind of tree intersections everything is.
+    * Find kinds of tree intersections
     */
 }
 
@@ -316,6 +343,7 @@ static void
 print_maze()
 {
    size_t i;
+   *(MAZE.data + 1621) = 123;
    for (i = 0; i < MAZE.size; i++)
    {
       if (*(MAZE.data + i))
