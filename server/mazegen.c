@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <locale.h>
-#include "mot_server.h"
+#include "mot_maze.h"
 
 #define N_WALL          0b0001
 #define E_WALL          0b0010
@@ -526,5 +526,4 @@ print_maze()
    }
 }
 
-            
 #endif
