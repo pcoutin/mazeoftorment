@@ -1,5 +1,5 @@
-#ifndef _MT_MAZE_H
-#define _MT_MAZE_H
+#ifndef _MOT_MAZE_H
+#define _MOT_MAZE_H
 
 typedef unsigned char      MCELL;
 
@@ -30,5 +30,6 @@ struct
    size_t size;
 } MAZE;
 
+void genmaze(unsigned int width, unsigned int height);
 
 #endif

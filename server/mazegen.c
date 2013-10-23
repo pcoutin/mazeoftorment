@@ -5,13 +5,14 @@
 #include <locale.h>
 #include "mot_maze.h"
 
-#define N_WALL          0b0001
-#define E_WALL          0b0010
-#define S_WALL          0b0100
-#define W_WALL          0b1000
+#define N_WALL          0x1
+#define E_WALL          0x2
+#define S_WALL          0x4
+#define W_WALL          0x8
 
 #ifdef _DEBUG
 static void print_maze();
+static void print_maze_old();
 static void print_code(unsigned char dircode);
 #endif
 
@@ -143,7 +144,7 @@ step()
    /*
     * If we're stuck, hunt.
     */
-   if (avoid == 0b1111)
+   if (avoid == 0xf)
    {
       for (MAZE.X = 0; MAZE.X < MAZE.width; MAZE.X++)
       {
@@ -160,7 +161,7 @@ step()
              * Break if the current cell hasn't been visited (already
              * checked) but it's adjacent to a visited cell.
              */
-            if (filledcell_check(MAZE.X, MAZE.Y) != 0b1111)
+            if (filledcell_check(MAZE.X, MAZE.Y) != 0xf)
             {
                goto _considered_harmful;
             }
@@ -178,7 +179,7 @@ step()
     */
 
    _considered_harmful:
-   if (avoid == 0b1111 &&
+   if (avoid == 0xf &&
          MAZE.X == MAZE.width &&
          MAZE.Y == MAZE.height)
    {
@@ -188,7 +189,7 @@ step()
    do
    {
       choice = 1 << mrand(0, 3);
-      if (avoid == 0b1111)
+      if (avoid == 0xf)
       {
          /*
           * Just pick a random empty cell.
@@ -427,6 +428,8 @@ main(int argc, char *argv[])
 
    printf("maze is %d bytes long.\n", MAZE.size);
 
+   print_maze_old();
+   putchar('\n');
    print_maze();
 
    return 0;

@@ -4,4 +4,5 @@ clc
 maze
 client/*.o
 client/clc
-maze/maze
+server/mazegen
+server/clc_server
