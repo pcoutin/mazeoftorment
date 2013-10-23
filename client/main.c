@@ -99,10 +99,11 @@ main(int argc, char *argv[])
        */
       SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
 
-      SDL_RenderDrawLine(renderer, 2, 2, linx, liny);
       drawPic(face, linx, liny);
 
-      draw_maze(0, 0);
+      /* Draw it in the middle of the screen! */
+      draw_maze((config.win_width - MAZE.w * 16) / 2,
+            (config.win_height - MAZE.h * 16) / 2);
 
       /*
        * Stop drawing things.

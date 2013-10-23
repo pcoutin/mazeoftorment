@@ -7,3 +7,5 @@ client/clc
 server/mazegen
 server/clc_server
 bin/*
+.*
+*.swp

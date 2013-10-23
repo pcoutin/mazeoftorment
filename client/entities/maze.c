@@ -59,8 +59,8 @@ draw_maze(int x, int y)
    {
       draw_mazetile(
             *(MAZE.data + i),
-            (i % MAZE.w) * TILE_WIDTH,
-            (i / MAZE.w) * TILE_HEIGHT
+            x + (i % MAZE.w) * TILE_WIDTH,
+            y + (i / MAZE.w) * TILE_HEIGHT
       );
    }
 }
