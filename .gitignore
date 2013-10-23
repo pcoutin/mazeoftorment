@@ -1,11 +1,15 @@
 # compiled source
 *.o
 clc
+mot
 maze
 client/*.o
 client/clc
+client/mot
 server/mazegen
-server/clc_server
+server/mot_server
 bin/*
 .*
 *.swp
+a.out
+
