@@ -1,5 +1,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <netdb.h>
 #include <errno.h>
@@ -12,10 +14,10 @@
 int
 main(int argc, char *argv[])
 {
-   int ssockfd, csockfd, err;
+   int ssockfd, csockfd, err, i;
    struct addrinfo hints, *srvinfo;
    struct sockaddr_storage caddr;
-   size_t addr_size;
+   socklen_t addr_size;
 
    genmaze(20, 20);
    memset(&hints, 0, sizeof(hints));
@@ -49,17 +51,28 @@ main(int argc, char *argv[])
    }
 
    /*
+    * If system thinks the socket is on use but it isn't, fix it...
+    */
+   i = 1;
+   if (setsockopt(ssockfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) == -1)
+   {
+      perror("setsockopt");
+      return 1;
+   }
+
+
+   /*
     * Bind socket to port.
     */
    if (bind(ssockfd, srvinfo->ai_addr, srvinfo->ai_addrlen) == -1)
    {
-      perror("Failed to bind to port.");
+      perror("Failed to bind to port");
       return 1;
    }
 
    if (listen(ssockfd, BACKLOG) == -1)
    {
-      perror("Failed to listen to connections.");
+      perror("Failed to listen to connections");
       return 1;
    }
 
@@ -71,14 +84,11 @@ main(int argc, char *argv[])
 
    if (csockfd == -1)
    {
-      perror("Cannot accept connections.");
+      perror("Cannot accept connections");
       return 1;
    }
 
-   /*
-    * wow so useful
-    */
-   char *msg = "hello world";
+   char *msg = "hello world\n";
    size_t len, bytes_sent;
 
    len = strlen(msg);
@@ -87,6 +97,8 @@ main(int argc, char *argv[])
    /*
     * Free things and exit.
     */
+   close(ssockfd);
+   close(csockfd);
    freeaddrinfo(srvinfo);
    free(MAZE.data);
 
