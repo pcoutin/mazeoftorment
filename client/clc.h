@@ -25,4 +25,6 @@ typedef struct
    SDL_Rect rect;
 } PICTURE;
 
+void draw_maze(int x, int y);
+
 #endif

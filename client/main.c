@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* debug */
+#include "../common/mot_maze.h"
+
 #include "clc.h"
 
 PICTURE
@@ -39,6 +42,10 @@ main(int argc, char *argv[])
    SDL_Window *window;
    PICTURE face;
 
+   /* debug, should remove later */
+   unsigned int i;
+   FILE *mfile;
+
    parsecfg(CFG_FNAME, &config);
 
    window = SDL_CreateWindow(
@@ -61,6 +68,15 @@ main(int argc, char *argv[])
 
    int linx = 42, liny = 42;
    face = loadPic("img/test.gif");
+
+   /*
+    * debug load maze from a file
+    */
+   mfile = fopen("maze.dat", "r");
+   fread(&MAZE, sizeof(MAZE), 1, mfile);
+   MAZE.data = malloc(MAZE.size * sizeof(MCELL));
+   fread(MAZE.data, sizeof(MCELL), MAZE.size, mfile);
+   fclose(mfile);
 
    for (;;)
    {
@@ -85,6 +101,8 @@ main(int argc, char *argv[])
 
       SDL_RenderDrawLine(renderer, 2, 2, linx, liny);
       drawPic(face, linx, liny);
+
+      draw_maze(0, 0);
 
       /*
        * Stop drawing things.

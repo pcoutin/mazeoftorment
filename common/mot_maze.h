@@ -1,7 +1,14 @@
 #ifndef _MOT_MAZE_H
 #define _MOT_MAZE_H
 
-typedef unsigned char      MCELL;
+#include <sys/types.h>
+
+#define N_WALL          0x1
+#define E_WALL          0x2
+#define S_WALL          0x4
+#define W_WALL          0x8
+
+typedef unsigned char   MCELL;
 
 struct
 {

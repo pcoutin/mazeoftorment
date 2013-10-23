@@ -3,12 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <locale.h>
-#include "mot_maze.h"
-
-#define N_WALL          0x1
-#define E_WALL          0x2
-#define S_WALL          0x4
-#define W_WALL          0x8
+#include "../common/mot_maze.h"
 
 #ifdef _DEBUG
 static void print_maze();
@@ -413,6 +408,7 @@ genmaze(unsigned int width, unsigned int height)
 int
 main(int argc, char *argv[])
 {
+   FILE *mfile;
    unsigned int w, h;
 
    if (argc != 3)
@@ -431,6 +427,14 @@ main(int argc, char *argv[])
    print_maze_old();
    putchar('\n');
    print_maze();
+
+   mfile = fopen("maze.dat", "w");
+
+   fwrite(&MAZE, sizeof(MAZE), 1, mfile);
+   fwrite(MAZE.data, sizeof(MCELL), MAZE.size, mfile);
+
+   fclose(mfile);
+   free(MAZE.data);
 
    return 0;
 }
