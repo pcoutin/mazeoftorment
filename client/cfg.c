@@ -1,7 +1,4 @@
 #include <stdio.h>
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
 
 #include "mot.h"
 
@@ -14,7 +11,7 @@ mt_getboolean(lua_State *L, const char *name, unsigned char *arg)
    {
       if (!lua_isboolean(L, -1))
       {
-         error(L, "`%s' should be a boolean.\n", name);
+         luaL_error(L, "`%s' should be a boolean.\n", name);
       }
       else
       {
@@ -33,7 +30,7 @@ mt_getnumber(lua_State *L, const char *name, double *arg)
    {
       if (!lua_isnumber(L, -1))
       {
-         error(L, "`%s' should be a number.\n", name);
+         luaL_error(L, "`%s' should be a number.\n", name);
       }
       else
       {
@@ -52,11 +49,12 @@ mt_getstring(lua_State *L, const char *name, char **arg)
    {
       if (!lua_isstring(L, -1))
       {
-         error(L, "`%s' should be a string.\n", name);
+         luaL_error(L, "`%s' should be a string.\n", name);
       }
       else
       {
-         *arg = lua_tostring(L, -1);
+         /* Suppress const char * whining */
+         *arg = (char *) lua_tostring(L, -1);
       }
    }
    lua_pop(L, 1);
@@ -65,8 +63,6 @@ mt_getstring(lua_State *L, const char *name, char **arg)
 void
 parsecfg(lua_State *L, CLC_CONFIG *config)
 {
-   FILE *cfile;
-
    /*
     * Set default values for configuration.
     */
@@ -83,7 +79,8 @@ parsecfg(lua_State *L, CLC_CONFIG *config)
     */
    if (luaL_loadfile(L, CFG_FNAME) || lua_pcall(L, 0, 0, 0))
    {
-      error(L, "Failed to parse configuration file: %s", lua_tostring(L, -1));
+      luaL_error(L, "Failed to parse configuration file: %s",
+            lua_tostring(L, -1));
       return;
    }
 

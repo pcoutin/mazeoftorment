@@ -3,6 +3,9 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
 
 #define CFG_FNAME    "config.lua"
 
@@ -15,8 +18,8 @@ SDL_Renderer *renderer;
 
 typedef struct
 {
-   Uint32 win_width;
-   Uint32 win_height;
+   int win_width;
+   int win_height;
    Uint32 win_flags;
    Uint32 renderflags;
    char *luamain;
@@ -30,5 +33,6 @@ typedef struct
 } PICTURE;
 
 void draw_maze(int x, int y);
+void parsecfg(lua_State *L, CLC_CONFIG *config);
 
 #endif

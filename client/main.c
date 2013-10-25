@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
 
 /* debug */
 #include "../common/mot_maze.h"
@@ -48,7 +45,6 @@ main(int argc, char *argv[])
    lua_State *L;
 
    /* debug, should remove later */
-   unsigned int i;
    FILE *mfile;
 
    L = lua_open();
