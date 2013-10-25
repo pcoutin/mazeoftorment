@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "../../common/mot_maze.h"
 #include "../clc.h"
 
@@ -63,4 +64,17 @@ draw_maze(int x, int y)
             y + (i / MAZE.w) * TILE_HEIGHT
       );
    }
+
+   /*
+    * Make MAZE.width and MAZE.height in pixels
+    */
+   MAZE.width = TILE_WIDTH * MAZE.w;
+   MAZE.height = TILE_HEIGHT * MAZE.h;
+
+   /*
+    * Make MAZE.X and MAZE.Y the starting X and Y coordinates of the
+    * maze...
+    */
+   MAZE.X = x;
+   MAZE.Y = y;
 }

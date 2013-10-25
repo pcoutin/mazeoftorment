@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 /* debug */
 #include "../common/mot_maze.h"
@@ -49,13 +50,15 @@ main(int argc, char *argv[])
    parsecfg(CFG_FNAME, &config);
 
    window = SDL_CreateWindow(
-         "box fun",
+         "MAZE OF TORMENT",
          SDL_WINDOWPOS_UNDEFINED,
          SDL_WINDOWPOS_UNDEFINED,
          config.win_width,
          config.win_height,
-         0
+         config.win_flags
    );
+
+   SDL_GetWindowSize(window, &config.win_width, &config.win_height);
 
    if (window == NULL)
    {

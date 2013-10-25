@@ -4,7 +4,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
-#define CFG_FNAME    "config.ini"
+#define CFG_FNAME    "config.lua"
 
 #define DEF_WIDTH    	800
 #define DEF_HEIGHT   	600
@@ -17,6 +17,7 @@ typedef struct
    unsigned int win_width;
    unsigned int win_height;
    unsigned char win_fullscreen;
+   Uint32 win_flags;
 } CLC_CONFIG;
 
 typedef struct

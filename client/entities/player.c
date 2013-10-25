@@ -6,14 +6,17 @@
  *
  * HAVE error messages for not being able to open an image instead of oops
  * segfault who cares if couldn't open
+ *
+ * For lua tables, store the player object on the key but put true or
+ * whatever in the value. Or it'll be slow.
  */
 
-typedef struct Player
+typedef struct
 {
    PICTURE pic;
    unsigned int x, y;
    void (*update) (Player *self);
-};
+} Player;
 
 /*
  * draws and updates player.

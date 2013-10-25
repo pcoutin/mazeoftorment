@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <locale.h>
+#include <stddef.h>
 #include "../common/mot_maze.h"
 
 #ifdef _DEBUG
