@@ -3,22 +3,60 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#include "clc.h"
+#include "mot.h"
 
 static void
-mt_getbool(lua_State *L, const char *name, unsigned char *arg)
+mt_getboolean(lua_State *L, const char *name, unsigned char *arg)
 {
    lua_getglobal(L, name);
 
    if (!lua_isnil(L, -1))
    {
-      if (!lua_isstring(L, -4))
+      if (!lua_isboolean(L, -1))
       {
-         error(L, "`mt_luamain' should be a string.\n");
+         error(L, "`%s' should be a boolean.\n", name);
       }
-      else if (!lua_isnil(L, -4))
+      else
       {
-         config->luamain = lua_tostring(L, -4);
+         *arg = lua_toboolean(L, -1);
+      }
+   }
+   lua_pop(L, 1);
+}
+
+static void
+mt_getnumber(lua_State *L, const char *name, double *arg)
+{
+   lua_getglobal(L, name);
+
+   if (!lua_isnil(L, -1))
+   {
+      if (!lua_isnumber(L, -1))
+      {
+         error(L, "`%s' should be a number.\n", name);
+      }
+      else
+      {
+         *arg = lua_tonumber(L, -1);
+      }
+   }
+   lua_pop(L, 1);
+}
+
+static void
+mt_getstring(lua_State *L, const char *name, char **arg)
+{
+   lua_getglobal(L, name);
+
+   if (!lua_isnil(L, -1))
+   {
+      if (!lua_isstring(L, -1))
+      {
+         error(L, "`%s' should be a string.\n", name);
+      }
+      else
+      {
+         *arg = lua_tostring(L, -1);
       }
    }
    lua_pop(L, 1);
@@ -32,9 +70,12 @@ parsecfg(lua_State *L, CLC_CONFIG *config)
    /*
     * Set default values for configuration.
     */
-   config->win_width          = DEF_WIDTH;
-   config->win_height         = DEF_HEIGHT;
+   unsigned char isfullscreen = DEF_FULLSCREEN;
+   unsigned char hwaccel      = DEF_HWACCEL;
+   double win_width           = DEF_WIDTH;
+   double win_height          = DEF_HEIGHT;
    config->win_flags          = 0;
+   config->renderflags        = 0;
    config->luamain            = "main.lua";
 
    /*
@@ -46,68 +87,27 @@ parsecfg(lua_State *L, CLC_CONFIG *config)
       return;
    }
 
-   /* Reset the lua stack */
-   lua_settop(L, 0);
+   mt_getstring(L, "mt_luamain", &config->luamain);
+   mt_getstring(L, "mt_defaultsrv", &config->defaultsrv);
+   mt_getboolean(L, "mt_hwaccel", &hwaccel);
+   mt_getboolean(L, "mt_fullscreen", &isfullscreen);
+   mt_getnumber(L, "w_xres", &win_width);
+   mt_getnumber(L, "w_yres", &win_height);
 
-   lua_getglobal(L, "mt_defaultsrv");
-   lua_getglobal(L, "mt_luamain");
-   lua_getglobal(L, "mt_fullscreen");
-   lua_getglobal(L, "w_xres");
-   lua_getglobal(L, "w_yres");
+   config->win_width = win_width;
+   config->win_height = win_height;
 
-   /*
-    * I wish this could be less ugly...
-    * If you try checking if a nil value is a string, lua (5.1 at least)
-    * gives an "unknown error" and makes the program exit.
-    */
-
-   if (!lua_isnil(L, -4))
+   if (isfullscreen)
    {
-      if (!lua_isstring(L, -4))
-      {
-         error(L, "`mt_luamain' should be a string.\n");
-      }
-      else
-      {
-         config->luamain = lua_tostring(L, -4);
-      }
+      config->win_flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
    }
 
-   if (!lua_isnil(L, -3))
+   if (hwaccel)
    {
-      if (!lua_isboolean(L, -3))
-      {
-         error(L, "`mt_fullscreen' should be true or false.\n");
-      }
-      else if (lua_toboolean(L, -3))
-      {
-         config->win_flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-      }
+      config->renderflags |= SDL_RENDERER_ACCELERATED;
    }
-      
-   if (!lua_isnil(L, -2))
+   else
    {
-      if (!lua_isnumber(L, -2))
-      {
-         error(L, "`w_xres' should be a number.\n");
-      }
-      else
-      {
-         config->win_width = (unsigned int) lua_tonumber(L, -2);
-      }
+      config->renderflags |= SDL_RENDERER_SOFTWARE;
    }
-
-   if (!lua_isnil(L, -1))
-   {
-      if (!lua_isnumber(L, -1))
-      {
-         error(L, "`w_yres' should be a number.\n");
-      }
-      else
-      {
-         config->win_height = (unsigned int) lua_tonumber(L, -1);
-      }
-   }
-
-   lua_settop(L, 0);
 }

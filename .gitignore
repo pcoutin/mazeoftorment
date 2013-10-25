@@ -1,6 +1,5 @@
 # compiled source
 *.o
-clc
 mot
 maze
 client/*.o

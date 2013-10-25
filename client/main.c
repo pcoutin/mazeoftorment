@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
 
 /* debug */
 #include "../common/mot_maze.h"
 
-#include "clc.h"
+#include "mot.h"
 
 PICTURE
 loadPic(char *path)
@@ -42,12 +45,16 @@ main(int argc, char *argv[])
    CLC_CONFIG config;
    SDL_Window *window;
    PICTURE face;
+   lua_State *L;
 
    /* debug, should remove later */
    unsigned int i;
    FILE *mfile;
 
-   parsecfg(CFG_FNAME, &config);
+   L = lua_open();
+
+   luaL_openlibs(L);
+   parsecfg(L, &config);
 
    window = SDL_CreateWindow(
          "MAZE OF TORMENT",
@@ -67,7 +74,7 @@ main(int argc, char *argv[])
       return 1;
    }
 
-   renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+   renderer = SDL_CreateRenderer(window, -1, config.renderflags);
 
    int linx = 42, liny = 42;
    face = loadPic("img/test.gif");

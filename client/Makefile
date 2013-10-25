@@ -2,15 +2,12 @@ CC=		cc
 CFLAGS=		-I/usr/include/lua5.1/ -Os -c
 LDFLAGS=	-L/usr/local/lib/ -lSDL2-2.0 -lSDL2_image -llua5.1
 
-OBJFILES=	ini.o main.o cfg.o maze.o
+OBJFILES=	main.o cfg.o maze.o
 
-all:	clc
+all:	mot
 
-clc:	${OBJFILES}
-	${CC} ${LDFLAGS} -o clc ${OBJFILES}
-
-ini.o:
-	make -C inih all
+mot:	${OBJFILES}
+	${CC} ${LDFLAGS} -o mot ${OBJFILES}
 
 main.o: main.c
 	${CC} ${CFLAGS} main.c
@@ -22,4 +19,4 @@ maze.o: entities/maze.c
 	${CC} ${CFLAGS} entities/maze.c
 
 clean:
-	rm *.o clc
+	rm *.o mot

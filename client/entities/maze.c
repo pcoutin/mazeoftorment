@@ -1,6 +1,6 @@
 #include <stddef.h>
 #include "../../common/mot_maze.h"
-#include "../clc.h"
+#include "../mot.h"
 
 #define TILE_WIDTH      16
 #define TILE_HEIGHT     16
