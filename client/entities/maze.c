@@ -56,17 +56,26 @@ draw_maze(int x, int y)
 {
    unsigned int i;
 
-   MAZE.X = x;
-   MAZE.Y = y;
-
    for (i = 0; i < MAZE.size; i++)
    {
       draw_mazetile(
             *(MAZE.data + i),
-            MAZE.X + (i % MAZE.w) * TILE_WIDTH,
-            MAZE.Y + (i / MAZE.w) * TILE_HEIGHT
+            x + (i % MAZE.w) * TILE_WIDTH,
+            y + (i / MAZE.w) * TILE_HEIGHT
       );
    }
 
-   return 0;
+   /*
+    * Make MAZE.width and MAZE.height in pixels
+    */
+   MAZE.width = TILE_WIDTH * MAZE.w;
+   MAZE.height = TILE_HEIGHT * MAZE.h;
+
+   /*
+    * Make MAZE.X and MAZE.Y the starting X and Y coordinates of the
+    * maze...
+    */
+   MAZE.X = x;
+   MAZE.Y = y;
+
 }

@@ -1,25 +1,68 @@
-#include <stdio.h>
+#include <string.h>
+#include "../common/inih/ini.h"
 #include "mot.h"
 
-static char *cfgfile;
+static int
+cfg_handler(void *user, const char *sec, const char *name, const char *value)
+{
+   CLC_CONFIG *config = (CLC_CONFIG *) user;
 
-static void mt_cfgread(FILE *f);
-static char *mt_find(char *vname);
-static void mt_getstr(char *vname, char **out);
-static void mt_getbool(char *vname, unsigned char *out);
-static void mt_getint(char *vname, int *out);
+   if (!strcmp(name, "mt_defaultsrv"))
+   {
+      config->defaultsrv = strdup(value);
+   }
+   else if (!strcmp(name, "mt_defaultport"))
+   {
+      config->defaultport = strdup(value);
+   }
+   else if (!strcmp(name, "mt_hwaccel") && !strcmp(value, "true"))
+   {
+      config->renderflags |= SDL_RENDERER_ACCELERATED;
+   }
+   else if (!strcmp(name, "mt_hwaccel") && !strcmp(value, "false"))
+   {
+      config->renderflags |= SDL_RENDERER_SOFTWARE;
+   }
+   else if (!strcmp(name, "mt_hwaccel"))
+   {
+      fprintf(stderr,
+            "On config.ini: mt_hwaccel should be true or false.\n");
+   }
+   else if (!strcmp(name, "mt_fullscreen") && !strcmp(value, "true"))
+   {
+      config->win_flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+   }
+   else if (!strcmp(name, "mt_fullscreen") && !strcmp(value, "false"))
+   {
+      return 1;
+   }
+   else if (!strcmp(name, "mt_fullscreen"))
+   {
+      fprintf(stderr,
+            "On config.ini: mt_fullscreen should be true or false.\n");
+   }
+   else if (!strcmp(name, "w_xres"))
+   {
+      config->win_width = atoi(value);
+   }
+   else if (!strcmp(name, "w_yres"))
+   {
+      config->win_height = atoi(value);
+   }
+   else
+   {
+      puts("oh no");
+      return 0;
+   }
+   return 1;
+}
 
 void
 parsecfg(CLC_CONFIG *config)
 {
-   FILE *f;
-   size_t fsize;
-
    /*
     * Set default values for configuration.
     */
-   unsigned char isfullscreen = DEF_FULLSCREEN;
-   unsigned char hwaccel      = DEF_HWACCEL;
    config->win_width          = DEF_WIDTH;
    config->win_height         = DEF_HEIGHT;
    config->win_flags          = 0;
@@ -27,54 +70,17 @@ parsecfg(CLC_CONFIG *config)
    config->defaultsrv         = "localhost";
    config->defaultport        = "6666";
 
-   return;
-
    /*
     * Attempt to parse config file.
     */
-   if (fopen(CFG_FNAME, "r") == NULL)
+   switch (ini_parse(CFG_FNAME, cfg_handler, config))
    {
-      perror("Failed to load config file " CFG_FNAME);
-      return;
-   }
-
-   /*
-    * Read it all into a buffer.
-    */
-   fseek(f, 0, SEEK_END);
-   fsize = ftell(f);
-   fseek(f, 0, SEEK_SET);
-
-   cfgfile = malloc(fsize + 1);
-   fread(config, fsize, 1, f);
-   fclose(f);
-
-   *(cfgfile + fsize) = 0;
-
-   mt_getstr("mt_defaultsrv", &config->defaultsrv);
-   mt_getbool("mt_hwaccel", &hwaccel);
-   mt_getbool("mt_fullscreen", &isfullscreen);
-   mt_getint("w_xres", &config->win_width);
-   mt_getint("w_yres", &config->win_height);
-
-   if (isfullscreen)
-   {
-      config->win_flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-   }
-
-   if (hwaccel)
-   {
-      config->renderflags |= SDL_RENDERER_ACCELERATED;
-   }
-   else
-   {
-      config->renderflags |= SDL_RENDERER_SOFTWARE;
-   }
-}
-
-static char *mt_find(char *vname)
-{
-   while ("MAGIC")
-   {
+      case 0:
+         break;
+      case -1:
+         fprintf(stderr, "Error opening config file %s\n", CFG_FNAME);
+         break;
+      default:
+         fprintf(stderr, "Error parsing config file %s\n", CFG_FNAME);
    }
 }

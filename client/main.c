@@ -41,6 +41,7 @@ main(int argc, char *argv[])
    SDL_Window *window;
    PICTURE face;
    CLC_CONFIG config;
+   Uint8 *kbdstate;
 
    /* debug, should remove later */
    FILE *mfile;
@@ -82,9 +83,23 @@ main(int argc, char *argv[])
    for (;;)
    {
       SDL_Event e;
-      if (SDL_WaitEvent(&e)) {
-         if (e.type == SDL_QUIT) {
+      if (SDL_WaitEvent(&e))
+      {
+         if (e.type == SDL_QUIT)
+         {
             break;
+         }
+         else if (e.type == SDL_KEYDOWN)
+         {
+            kbdstate = (Uint8 *) SDL_GetKeyboardState(NULL);
+            if (kbdstate[SDL_SCANCODE_DOWN])
+            {
+               liny++;
+            }
+            if (kbdstate[SDL_SCANCODE_Q])
+            {
+               break;
+            }
          }
       }
 

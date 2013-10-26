@@ -4,7 +4,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
-#define CFG_FNAME    "mazeoftorment.cfg"
+#define CFG_FNAME       "config.ini"
 
 #define DEF_WIDTH    	800
 #define DEF_HEIGHT   	600
