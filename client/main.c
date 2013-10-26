@@ -35,22 +35,17 @@ drawPic(PICTURE pic, int x, int y)
    SDL_RenderCopy(renderer, pic.texture, NULL, &pic.rect);
 }
 
-
 int
 main(int argc, char *argv[])
 {
-   CLC_CONFIG config;
    SDL_Window *window;
    PICTURE face;
-   lua_State *L;
+   CLC_CONFIG config;
 
    /* debug, should remove later */
    FILE *mfile;
 
-   L = lua_open();
-
-   luaL_openlibs(L);
-   parsecfg(L, &config);
+   parsecfg(&config);
 
    window = SDL_CreateWindow(
          "MAZE OF TORMENT",
@@ -117,6 +112,8 @@ main(int argc, char *argv[])
       SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
       SDL_RenderPresent(renderer);
    }
+
+   SDL_DestroyTexture(face.texture);
 
    SDL_DestroyWindow(window);
    SDL_Quit();

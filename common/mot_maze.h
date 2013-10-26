@@ -19,9 +19,7 @@ struct
    size_t w, h;
 
    /*
-    * Cell width and height of the maze, not counting walls (on the
-    * server/generator), width and height in pixels of the maze (in the
-    * client).
+    * Cell width and height of the maze, not counting walls.
     */
    unsigned int width, height;
 

@@ -3,11 +3,8 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
 
-#define CFG_FNAME    "config.lua"
+#define CFG_FNAME    "mazeoftorment.cfg"
 
 #define DEF_WIDTH    	800
 #define DEF_HEIGHT   	600
@@ -22,9 +19,10 @@ typedef struct
    int win_height;
    Uint32 win_flags;
    Uint32 renderflags;
-   char *luamain;
    char *defaultsrv;
+   char *defaultport;
 } CLC_CONFIG;
+
 
 typedef struct
 {
@@ -32,7 +30,7 @@ typedef struct
    SDL_Rect rect;
 } PICTURE;
 
+void parsecfg(CLC_CONFIG *config);
 void draw_maze(int x, int y);
-void parsecfg(lua_State *L, CLC_CONFIG *config);
 
 #endif

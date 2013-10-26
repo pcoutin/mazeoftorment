@@ -1,98 +1,61 @@
 #include <stdio.h>
-
 #include "mot.h"
 
-static void
-mt_getboolean(lua_State *L, const char *name, unsigned char *arg)
-{
-   lua_getglobal(L, name);
+static char *cfgfile;
 
-   if (!lua_isnil(L, -1))
-   {
-      if (!lua_isboolean(L, -1))
-      {
-         luaL_error(L, "`%s' should be a boolean.\n", name);
-      }
-      else
-      {
-         *arg = lua_toboolean(L, -1);
-      }
-   }
-   lua_pop(L, 1);
-}
-
-static void
-mt_getnumber(lua_State *L, const char *name, double *arg)
-{
-   lua_getglobal(L, name);
-
-   if (!lua_isnil(L, -1))
-   {
-      if (!lua_isnumber(L, -1))
-      {
-         luaL_error(L, "`%s' should be a number.\n", name);
-      }
-      else
-      {
-         *arg = lua_tonumber(L, -1);
-      }
-   }
-   lua_pop(L, 1);
-}
-
-static void
-mt_getstring(lua_State *L, const char *name, char **arg)
-{
-   lua_getglobal(L, name);
-
-   if (!lua_isnil(L, -1))
-   {
-      if (!lua_isstring(L, -1))
-      {
-         luaL_error(L, "`%s' should be a string.\n", name);
-      }
-      else
-      {
-         /* Suppress const char * whining */
-         *arg = (char *) lua_tostring(L, -1);
-      }
-   }
-   lua_pop(L, 1);
-}
+static void mt_cfgread(FILE *f);
+static char *mt_find(char *vname);
+static void mt_getstr(char *vname, char **out);
+static void mt_getbool(char *vname, unsigned char *out);
+static void mt_getint(char *vname, int *out);
 
 void
-parsecfg(lua_State *L, CLC_CONFIG *config)
+parsecfg(CLC_CONFIG *config)
 {
+   FILE *f;
+   size_t fsize;
+
    /*
     * Set default values for configuration.
     */
    unsigned char isfullscreen = DEF_FULLSCREEN;
    unsigned char hwaccel      = DEF_HWACCEL;
-   double win_width           = DEF_WIDTH;
-   double win_height          = DEF_HEIGHT;
+   config->win_width          = DEF_WIDTH;
+   config->win_height         = DEF_HEIGHT;
    config->win_flags          = 0;
    config->renderflags        = 0;
-   config->luamain            = "main.lua";
+   config->defaultsrv         = "localhost";
+   config->defaultport        = "6666";
+
+   return;
 
    /*
     * Attempt to parse config file.
     */
-   if (luaL_loadfile(L, CFG_FNAME) || lua_pcall(L, 0, 0, 0))
+   if (fopen(CFG_FNAME, "r") == NULL)
    {
-      luaL_error(L, "Failed to parse configuration file: %s",
-            lua_tostring(L, -1));
+      perror("Failed to load config file " CFG_FNAME);
       return;
    }
 
-   mt_getstring(L, "mt_luamain", &config->luamain);
-   mt_getstring(L, "mt_defaultsrv", &config->defaultsrv);
-   mt_getboolean(L, "mt_hwaccel", &hwaccel);
-   mt_getboolean(L, "mt_fullscreen", &isfullscreen);
-   mt_getnumber(L, "w_xres", &win_width);
-   mt_getnumber(L, "w_yres", &win_height);
+   /*
+    * Read it all into a buffer.
+    */
+   fseek(f, 0, SEEK_END);
+   fsize = ftell(f);
+   fseek(f, 0, SEEK_SET);
 
-   config->win_width = win_width;
-   config->win_height = win_height;
+   cfgfile = malloc(fsize + 1);
+   fread(config, fsize, 1, f);
+   fclose(f);
+
+   *(cfgfile + fsize) = 0;
+
+   mt_getstr("mt_defaultsrv", &config->defaultsrv);
+   mt_getbool("mt_hwaccel", &hwaccel);
+   mt_getbool("mt_fullscreen", &isfullscreen);
+   mt_getint("w_xres", &config->win_width);
+   mt_getint("w_yres", &config->win_height);
 
    if (isfullscreen)
    {
@@ -106,5 +69,12 @@ parsecfg(lua_State *L, CLC_CONFIG *config)
    else
    {
       config->renderflags |= SDL_RENDERER_SOFTWARE;
+   }
+}
+
+static char *mt_find(char *vname)
+{
+   while ("MAGIC")
+   {
    }
 }

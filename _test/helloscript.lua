@@ -1,5 +1,7 @@
 print("THIS IS A TEST")
-print(lolo())
+print(mt.lolo())
+
+mt.magic()
 
 -- factorialala
 function fact (n)

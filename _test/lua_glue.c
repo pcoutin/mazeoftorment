@@ -4,30 +4,36 @@
 
 #include <stdio.h>
 
-static const struct luaL_reg mylib [] = {
-   {"lolo", l_Lolo},
-   {NULL, NULL} /* sentinel */
-};
-
 static int
-l_Lolo(lua_State *L)
+mt_Lolo(lua_State *L)
 {
    lua_pushstring(L, "Lolo!");
    return 1;
 }
 
-//void
-//init_lua()
+static void
+mt_magic()
+{
+   puts("this is from C");
+}
+
+static const struct luaL_reg mt_lualib [] = {
+   {"lolo", mt_Lolo},
+   {"magic", mt_magic},
+   {NULL, NULL}
+};
+
+int
 main()
 {
    int error;
    lua_State *L = lua_open();
 
-   lua_pushcfunction(L, l_Lolo);
-   lua_setglobal(L, "lolo");
-
    /* Open the standard Lua libraries. */
    luaL_openlibs(L);
+
+   /* Load our library */
+   luaL_openlib(L, "mt", mt_lualib, 0);
 
    /* Execute a file or something */
    if (luaL_loadfile(L, "helloscript.lua"))

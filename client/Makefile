@@ -1,5 +1,5 @@
 CC=		cc
-CFLAGS=		-Wall -I/usr/include/lua5.1/ -Os -c
+CFLAGS=		-Wall -I/usr/include/lua5.1/ -O2 -c
 LDFLAGS=	-L/usr/local/lib/ -lSDL2-2.0 -lSDL2_image -llua5.1
 
 OBJFILES=	main.o cfg.o maze.o
