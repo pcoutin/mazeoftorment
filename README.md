@@ -1,7 +1,7 @@
 # Maze of Torment
 
 The current idea for this project is to build a game involving a maze. And
-several players. And UDP/IP sockets, as well as Lua integration.
+several players. And UDP/IP sockets, as well as LuaJIT + FFI integration.
 
 On *nix, the client should build if you have SDL and SDL_image 2.0. The
 server will probably not need anything special besides POSIX sockets and

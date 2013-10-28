@@ -1,5 +1,5 @@
 CC=		cc
-CFLAGS=		-Wall -O2 -c
+CFLAGS=		-Wall -O2 -c -I/usr/local/include
 LDFLAGS=	-L/usr/local/lib/ -lSDL2-2.0 -lSDL2_image
 
 OBJFILES=	main.o cfg.o maze.o ini.o

@@ -42,6 +42,7 @@ main(int argc, char *argv[])
    PICTURE face;
    CLC_CONFIG config;
    Uint8 *kbdstate;
+   SDL_Event e;
 
    /* debug, should remove later */
    FILE *mfile;
@@ -80,21 +81,23 @@ main(int argc, char *argv[])
    fread(MAZE.data, sizeof(MCELL), MAZE.size, mfile);
    fclose(mfile);
 
+   linx = (config.win_width - MAZE.w * 16) / 2 + 8;
+   liny = (config.win_height - MAZE.h * 16) / 2 + 8;
+
    for (;;)
    {
-      SDL_Event e;
-      if (SDL_WaitEvent(&e))
+      if (SDL_PollEvent(&e))
       {
          if (e.type == SDL_QUIT)
          {
             break;
          }
-         else if (e.type == SDL_KEYDOWN)
+         //else if (e.type == SDL_KEYDOWN)
          {
             kbdstate = (Uint8 *) SDL_GetKeyboardState(NULL);
             if (kbdstate[SDL_SCANCODE_DOWN])
             {
-               liny++;
+               liny += 32;
             }
             if (kbdstate[SDL_SCANCODE_Q])
             {
@@ -106,9 +109,11 @@ main(int argc, char *argv[])
       /* Clear last frame. */
       SDL_RenderClear(renderer);
 
+      /*
       if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(1)) {
          SDL_GetMouseState(&linx, &liny);
       }
+      */
 
       /*
        * Draw things.
