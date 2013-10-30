@@ -1,9 +1,5 @@
 #include <stddef.h>
-#include "../../common/mot_maze.h"
 #include "../mot.h"
-
-#define TILE_WIDTH      16
-#define TILE_HEIGHT     16
 
 static void
 draw_mazetile(MCELL tile, int x, int y)
@@ -79,3 +75,19 @@ draw_maze(int x, int y)
    MAZE.Y = y;
 
 }
+
+MCELL
+mazetile(int x, int y)
+{
+   MCELL *ret = MAZE.data + x + (MAZE.w * y);
+
+   if (ret - MAZE.data > MAZE.size || ret - MAZE.data < 0)
+   {
+      return 0; /* Everything outside the maze is EMPTY. */
+   }
+   return *ret;
+}
+
+/*
+ * Want to get the X and Y pixel coords of a certain cell somehow.
+ */

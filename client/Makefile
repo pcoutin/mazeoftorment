@@ -1,8 +1,8 @@
 CC=		cc
-CFLAGS=		-Wall -O2 -c -I/usr/local/include
+CFLAGS=		-Wall -O0 -g -c -I/usr/local/include
 LDFLAGS=	-L/usr/local/lib/ -lSDL2-2.0 -lSDL2_image
 
-OBJFILES=	main.o cfg.o maze.o ini.o
+OBJFILES=	main.o cfg.o maze.o player.o ini.o
 
 all:	mot
 
@@ -20,6 +20,9 @@ maze.o: entities/maze.c
 
 ini.o:	../common/inih/ini.c
 	cd ../common/inih; cc -Os -o ../../client/ini.o -c ini.c
+
+player.o: entities/player.c
+	${CC} ${CFLAGS} entities/player.c
 
 clean:
 	rm *.o mot

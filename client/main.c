@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-/* debug */
-#include "../common/mot_maze.h"
-
 #include "mot.h"
 
 PICTURE
@@ -14,7 +11,12 @@ loadPic(char *path)
    SDL_Texture *tex;
    PICTURE pic;
 
-   s = IMG_Load(path);
+   if ((s = IMG_Load(path)) == NULL)
+   {
+      fprintf(stderr, "Failed to load image\n");
+      exit(1);
+   }
+
    tex = SDL_CreateTextureFromSurface(renderer, s);
    pic.rect.x = 0;
    pic.rect.y = 0;
@@ -38,14 +40,16 @@ drawPic(PICTURE pic, int x, int y)
 int
 main(int argc, char *argv[])
 {
-   SDL_Window *window;
-   PICTURE face;
-   CLC_CONFIG config;
-   Uint8 *kbdstate;
-   SDL_Event e;
+   SDL_Window  *window;
+   PICTURE     face;
+   CLC_CONFIG  config;
+   Uint8       *kbdstate;
+   SDL_Event   e;
+   PLAYER      me;
+   PLAYER      *remote;
 
    /* debug, should remove later */
-   FILE *mfile;
+   FILE        *mfile;
 
    parsecfg(&config);
 
@@ -69,7 +73,7 @@ main(int argc, char *argv[])
 
    renderer = SDL_CreateRenderer(window, -1, config.renderflags);
 
-   int linx = 42, liny = 42;
+//   int linx = 42, liny = 42;
    face = loadPic("img/test.gif");
 
    /*
@@ -81,9 +85,19 @@ main(int argc, char *argv[])
    fread(MAZE.data, sizeof(MCELL), MAZE.size, mfile);
    fclose(mfile);
 
-   linx = (config.win_width - MAZE.w * 16) / 2 + 8;
-   liny = (config.win_height - MAZE.h * 16) / 2 + 8;
+   me.x = (config.win_width - MAZE.w * 16) / 2 + 8;
+   me.y = (config.win_height - MAZE.h * 16) / 2 + 8;
+   me.type = 0; /* FOR NOW */
 
+   /*
+    * Initialize maze.
+    */
+   MAZE.X = (config.win_width - MAZE.w * 16) / 2;
+   MAZE.Y = (config.win_height - MAZE.h * 16) / 2;
+
+   /*
+    * Game loop!
+    */
    for (;;)
    {
       if (SDL_PollEvent(&e))
@@ -95,14 +109,13 @@ main(int argc, char *argv[])
          //else if (e.type == SDL_KEYDOWN)
          {
             kbdstate = (Uint8 *) SDL_GetKeyboardState(NULL);
-            if (kbdstate[SDL_SCANCODE_DOWN])
-            {
-               liny += 32;
-            }
+
             if (kbdstate[SDL_SCANCODE_Q])
             {
                break;
             }
+
+            update_me(&me, SDL_GetKeyboardState(NULL));
          }
       }
 
@@ -120,11 +133,10 @@ main(int argc, char *argv[])
        */
       SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
 
-      drawPic(face, linx, liny);
+      drawPic(face, me.x, me.y);
 
       /* Draw it in the middle of the screen! */
-      draw_maze((config.win_width - MAZE.w * 16) / 2,
-            (config.win_height - MAZE.h * 16) / 2);
+      draw_maze(MAZE.X, MAZE.Y);
 
       /*
        * Stop drawing things.

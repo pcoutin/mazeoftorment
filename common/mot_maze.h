@@ -25,7 +25,7 @@ struct
 
    /*
     * The killer's/drunkard's/maze carver's current X and Y position in
-    * the generator. The maze's top left corner in the client.
+    * the generator. The maze's top left corner in the client. (in pixels)
     */
    unsigned int X, Y;
 
@@ -34,6 +34,8 @@ struct
     */
    size_t size;
 } MAZE;
+
+#define MTILE(x, y) *(MAZE.data + x + y * MAZE.h)
 
 #ifdef _MOT_SERVER
 void genmaze(unsigned int width, unsigned int height);
