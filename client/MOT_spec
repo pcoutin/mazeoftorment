@@ -1,0 +1,65 @@
+MAZE_MAGIC     0x6D7A
+
+ADD_PLAYER     0x4E45
+
+HUNTER         0x4855
+
+ILLEGAL_MOV    0xF000
+PLAYER_MOV     0x4D4F
+PLAYER_DC      0x4443
+PLAYER_DIE     0x4B4F
+PLAYER_WIN     0x5749
+
+all the magic numbers will be unsigned short...
+
+
+Server: is TCP
+
+send the maze for the client.
+* send MAZE_MAGIC
+* send unsigned int, width of maze (in unsigned chars)
+* send unsigned int, size of maze in bytes
+* send the whole maze byte by byte
+* wait for MAZE_MAGIC packet
+
+expect player name right after sending the maze (the player chooses name
+before connecting)
+* receive null terminated string
+
+send player's number
+* send unsigned char
+
+add players to the connecting pre-game screen as they connect (as well as
+the ones connected before this player, if any)
+* send ADD_PLAYER
+* send unsigned char player number
+* send null-terminated string for the name
+
+Choose hunter (which means the game begins)
+* send HUNTER
+* send the unsigned char value of the hunter player
+
+Player updates
+==============
+
+from other players to the client:
+
+A player MOVES on the maze
+* PLAYER_MOV
+* unsigned char pnum, short x, short y
+
+A player wins
+* send PLAYER_WIN
+* send unsigned char pnum
+
+Player disconnects/loses/get hunted
+* send PLAYER_DC
+* send unsigned char pnum
+
+from the client to the server:
+
+Move
+* PLAYER_MOV
+* short x, short y
+* if the move is illegal, send ILLEGAL_MOV and don't send move update to
+  players
