@@ -5,6 +5,8 @@
 #include <SDL2/SDL_image.h>
 #include "../common/mot_maze.h"
 
+#include "entities/entities.h"
+
 #define CFG_FNAME       "config.ini"
 
 #define DEF_WIDTH    	800
@@ -30,21 +32,6 @@ typedef struct
 } CLC_CONFIG;
 
 
-typedef struct
-{
-   SDL_Texture *texture;
-   SDL_Rect rect;
-} PICTURE;
-
-typedef struct
-{
-   /* The location of the player in pixels. */
-   unsigned int x, y;
-
-   /* hunter or prey? 0 is prey, 1 is hunter */
-   unsigned char type;
-} PLAYER;
-
 /* cfg.c */
 void parsecfg(CLC_CONFIG *config);
 
@@ -53,6 +40,10 @@ void draw_maze(int x, int y);
 MCELL mazetile(int x, int y);
 
 /* entities/player.c */
-void update_me(PLAYER *me, const Uint8 *kbdstate);
+void local_player_update(PLAYER *me, const Uint8 *kbdstate);
+
+/* entities/picture.c */
+PICTURE loadPic(char *path);
+void drawPic(PICTURE pic, int x, int y);
 
 #endif

@@ -12,6 +12,10 @@ PLAYER_WIN     0x5749
 
 all the magic numbers will be unsigned short...
 
+TYPES
+unsigned short    magical instruction things
+short             Maze player locations (x, y)
+unsigned char     Player number
 
 Server: is TCP
 

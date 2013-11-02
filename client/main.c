@@ -4,39 +4,6 @@
 
 #include "mot.h"
 
-PICTURE
-loadPic(char *path)
-{
-   SDL_Surface *s;
-   SDL_Texture *tex;
-   PICTURE pic;
-
-   if ((s = IMG_Load(path)) == NULL)
-   {
-      fprintf(stderr, "Failed to load image\n");
-      exit(1);
-   }
-
-   tex = SDL_CreateTextureFromSurface(renderer, s);
-   pic.rect.x = 0;
-   pic.rect.y = 0;
-   pic.rect.w = s->w;
-   pic.rect.h = s->h;
-   pic.texture = tex;
-
-   SDL_FreeSurface(s);
-
-   return pic;
-}
-
-void
-drawPic(PICTURE pic, int x, int y)
-{
-   pic.rect.x = x;
-   pic.rect.y = y;
-   SDL_RenderCopy(renderer, pic.texture, NULL, &pic.rect);
-}
-
 int
 main(int argc, char *argv[])
 {
@@ -47,6 +14,7 @@ main(int argc, char *argv[])
    SDL_Event   e;
    PLAYER      me;
    PLAYER      *remote;
+   Uint32 time;
 
    /* debug, should remove later */
    FILE        *mfile;
@@ -73,7 +41,6 @@ main(int argc, char *argv[])
 
    renderer = SDL_CreateRenderer(window, -1, config.renderflags);
 
-//   int linx = 42, liny = 42;
    face = loadPic("img/test.gif");
 
    /*
@@ -85,38 +52,37 @@ main(int argc, char *argv[])
    fread(MAZE.data, sizeof(MCELL), MAZE.size, mfile);
    fclose(mfile);
 
-   me.x = (config.win_width - MAZE.w * 16) / 2 + 8;
-   me.y = (config.win_height - MAZE.h * 16) / 2 + 8;
-   me.type = 0; /* FOR NOW */
-
    /*
     * Initialize maze.
     */
    MAZE.X = (config.win_width - MAZE.w * 16) / 2;
    MAZE.Y = (config.win_height - MAZE.h * 16) / 2;
 
+   /* Type is 0 (not hunter :( )... FOR NOW */
+   init_player(&me, 6, 6, 0, &face);
+
    /*
     * Game loop!
     */
    for (;;)
    {
-      if (SDL_PollEvent(&e))
+      time = SDL_GetTicks();
+
+      if (SDL_WaitEvent(&e))
       {
          if (e.type == SDL_QUIT)
          {
             break;
          }
-         //else if (e.type == SDL_KEYDOWN)
+
+         kbdstate = (Uint8 *) SDL_GetKeyboardState(NULL);
+
+         if (kbdstate[SDL_SCANCODE_Q])
          {
-            kbdstate = (Uint8 *) SDL_GetKeyboardState(NULL);
-
-            if (kbdstate[SDL_SCANCODE_Q])
-            {
-               break;
-            }
-
-            update_me(&me, SDL_GetKeyboardState(NULL));
+            break;
          }
+
+         local_player_update(&me, SDL_GetKeyboardState(NULL));
       }
 
       /* Clear last frame. */
@@ -133,6 +99,7 @@ main(int argc, char *argv[])
        */
       SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
 
+      printf("%d %d - %d %d\n", me.x, me.y);
       drawPic(face, me.x, me.y);
 
       /* Draw it in the middle of the screen! */
@@ -143,6 +110,11 @@ main(int argc, char *argv[])
        */
       SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
       SDL_RenderPresent(renderer);
+
+      if (20 > (SDL_GetTicks() - time))
+      {
+         SDL_Delay(20 - (SDL_GetTicks() - time));
+      }
    }
 
    SDL_DestroyTexture(face.texture);

@@ -87,7 +87,3 @@ mazetile(int x, int y)
    }
    return *ret;
 }
-
-/*
- * Want to get the X and Y pixel coords of a certain cell somehow.
- */
