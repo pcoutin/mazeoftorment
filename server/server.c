@@ -21,6 +21,33 @@
 #define PLAYER_DIE     0x4B4F
 #define PLAYER_WIN     0x5749
 
+/*
+ * Thanks to Brian Hall for Beej's Guide to Network Programming
+ * This function is taken from the guide, and this function is under
+ * public domain. This function was modified.
+ */
+void
+sendall(int s, char *buf, size_t len)
+{
+   int total = 0;          // how many bytes we've sent
+   int bytesleft = len;    // how many we have left to send
+   int n;
+
+   while(total < len)
+   {
+      n = send(s, buf+total, bytesleft, 0);
+
+      if (n == -1)
+      {
+         perror("sendall");
+         exit(EXIT_FAILURE);
+      }
+
+      total += n;
+      bytesleft -= n;
+   }
+} 
+
 int
 main(int argc, char *argv[])
 {
@@ -101,25 +128,20 @@ main(int argc, char *argv[])
       return 1;
    }
 
-#if 0
-   char *msg = "hello world\n";
-
-   len = strlen(msg);
-   bytes_sent = send(csockfd, msg, len, 0);
-#endif
-
+   /* Send maze magic */
    magic = htons(MAZE_MAGIC);
-   len = sizeof(magic);
+   sendall(csockfd, (char *) &magic, sizeof(magic));
 
-   send(csockfd, &magic, len, 0);
-
+   /* Send maze data width */
    u = htonl(MAZE.w);
-   send(csockfd, &u, sizeof(u), 0);
+   sendall(csockfd, (char *) &u, sizeof(u));
 
+   /* Send size of maze */
    u = htonl(MAZE.size);
-   send(csockfd, &u, sizeof(u), 0);
+   sendall(csockfd, (char *) &u, sizeof(u));
 
-   send(csockfd, MAZE.data, MAZE.size, 0);
+   /* Send the maze itself... */
+   sendall(csockfd, MAZE.data, MAZE.size);
 
    /*
     * Free things and exit.

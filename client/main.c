@@ -92,18 +92,6 @@ main(int argc, char *argv[])
    prey     = loadPic("img/prey.gif");
    black    = loadPic("img/black.gif");
 
-#if 0
-   /*
-    * debug load maze from a file
-    */
-
-   mfile = fopen("maze.dat", "r");
-   fread(&MAZE, sizeof(MAZE), 1, mfile);
-   MAZE.data = malloc(MAZE.size * sizeof(MCELL));
-   fread(MAZE.data, sizeof(MCELL), MAZE.size, mfile);
-   fclose(mfile);
-#endif
-
    /*
     * Initialize maze.
     */
