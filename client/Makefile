@@ -1,8 +1,8 @@
 CC=		cc
 CFLAGS=		-Wall -O2 -c -I/usr/local/include
-LDFLAGS=	-L/usr/local/lib/ -lGL -lSDL2-2.0 -lSDL2_image
+LDFLAGS=	-L/usr/local/lib/ -lGL -lSDL2-2.0 -lSDL2_image -lSDL2_net
 
-OBJFILES=	main.o cfg.o maze.o picture.o player.o ini.o
+OBJFILES=	main.o cfg.o maze.o picture.o player.o ini.o net.o
 
 all:	mot
 
@@ -26,6 +26,9 @@ player.o: entities/player.c
 
 picture.o: entities/picture.c
 	${CC} ${CFLAGS} entities/picture.c
+
+net.o: net.c
+	${CC} ${CFLAGS} net.c
 
 clean:
 	rm *.o mot

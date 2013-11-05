@@ -8,6 +8,8 @@ typedef struct
 
 } PICTURE;
 
+PICTURE black;
+
 typedef struct _mot_player
 {
    /* The location of the player in maze tiles. */
@@ -16,11 +18,19 @@ typedef struct _mot_player
    /* hunter or prey? 0 is prey, 1 is hunter */
    unsigned char type;
 
+   /* The player number */
+   unsigned char playerno;
+
+   unsigned char dead;
+
    PICTURE *sprite;
 
 } PLAYER;
 
-void init_player(PLAYER *, short, short, unsigned char, PICTURE *);
+void init_player(PLAYER *, short, short, unsigned char,
+      unsigned char, PICTURE *);
 void drawPlayer(PLAYER *);
+void local_player_update(PLAYER *, PLAYER *, const Uint8 *);
+void clearPlayer(PLAYER *);
 
 #endif

@@ -1,25 +1,72 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <SDL2/SDL_net.h>
 
 #include "mot.h"
+#include "net.h"
 
 int
 main(int argc, char *argv[])
 {
    SDL_Window  *window;
-   PICTURE     face;
+   PICTURE     predator;
+   PICTURE     prey;
    CLC_CONFIG  config;
    Uint8       *kbdstate;
    SDL_Event   e;
    PLAYER      me;
    PLAYER      *remote;
    Uint32 time;
+   IPaddress   srv_ip;
+   TCPsocket   srv_sock;
+   int i;
 
    /* debug, should remove later */
    FILE        *mfile;
 
+   if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS) == -1)
+   {
+      fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
+      exit(EXIT_FAILURE);
+   }
+
+   if (SDLNet_Init() == -1)
+   {
+      fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
+      exit(EXIT_FAILURE);
+   }
+
    parsecfg(&config);
+
+   /*
+    * Connect to server!
+    */
+   if (SDLNet_ResolveHost(&srv_ip, config.defaultsrv,
+            atoi(config.defaultport)))
+   {
+      fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
+      exit(EXIT_FAILURE);
+   }
+
+   /*
+    * Bind socket!
+    */
+   if (!(srv_sock = SDLNet_TCP_Open(&srv_ip)))
+   {
+      fprintf(stderr, "SDLNet_TCP_Open: %s\n", SDLNet_GetError());
+      exit(EXIT_FAILURE);
+   }
+
+   /*
+    * Get maze, add connecting players to buffer and wait until the game
+    * begins.
+    */
+
+   if (getmaze(srv_sock))
+   {
+      exit(EXIT_FAILURE);
+   }
 
    window = SDL_CreateWindow(
          "MAZE OF TORMENT",
@@ -36,21 +83,26 @@ main(int argc, char *argv[])
    {
       fprintf(stderr, "Could not create window: %s\n",
             SDL_GetError());
-      return 1;
+      exit(EXIT_FAILURE);
    }
 
    renderer = SDL_CreateRenderer(window, -1, config.renderflags);
 
-   face = loadPic("img/test.gif");
+   predator = loadPic("img/predator.gif");
+   prey     = loadPic("img/prey.gif");
+   black    = loadPic("img/black.gif");
 
+#if 0
    /*
     * debug load maze from a file
     */
+
    mfile = fopen("maze.dat", "r");
    fread(&MAZE, sizeof(MAZE), 1, mfile);
    MAZE.data = malloc(MAZE.size * sizeof(MCELL));
    fread(MAZE.data, sizeof(MCELL), MAZE.size, mfile);
    fclose(mfile);
+#endif
 
    /*
     * Initialize maze.
@@ -58,8 +110,28 @@ main(int argc, char *argv[])
    MAZE.X = (config.win_width - MAZE.w * 16) / 2;
    MAZE.Y = (config.win_height - MAZE.h * 16) / 2;
 
-   /* Type is 0 (not hunter :( )... FOR NOW */
-   init_player(&me, 6, 6, 0, &face);
+   /* Type is 1 (hunter)... FOR NOW */
+   init_player(&me, 6, 6, 1, 0, &predator);
+
+   /*
+    * Draw things.
+    */
+   SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+
+   /* Draw the maze in the middle of the screen! And draw the players */
+   draw_maze(MAZE.X, MAZE.Y);
+
+   drawPlayer(&me);
+
+   remote = calloc(4, sizeof(PLAYER));
+
+   init_player(remote, 0, 0, 0, 1, &prey);
+   init_player(remote + 1, 2, 0, 0, 2, &prey);
+
+   for (i = 0; (remote + i)->sprite != NULL; i++)
+   {
+      drawPlayer(remote + i);
+   }
 
    /*
     * Game loop!
@@ -68,7 +140,14 @@ main(int argc, char *argv[])
    {
       time = SDL_GetTicks();
 
-      if (SDL_WaitEvent(&e))
+      /*
+       * Poll the network
+       */
+
+      /*
+       * Poll for keys
+       */
+      if (SDL_PollEvent(&e))
       {
          if (e.type == SDL_QUIT)
          {
@@ -82,28 +161,10 @@ main(int argc, char *argv[])
             break;
          }
 
-         local_player_update(&me, SDL_GetKeyboardState(NULL));
+         local_player_update(&me, remote, SDL_GetKeyboardState(NULL));
       }
 
-      /* Clear last frame. */
-      SDL_RenderClear(renderer);
-
-      /*
-      if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(1)) {
-         SDL_GetMouseState(&linx, &liny);
-      }
-      */
-
-      /*
-       * Draw things.
-       */
       SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
-
-      printf("%d %d - %d %d\n", me.x, me.y);
-      drawPic(face, me.x, me.y);
-
-      /* Draw it in the middle of the screen! */
-      draw_maze(MAZE.X, MAZE.Y);
 
       /*
        * Stop drawing things.
@@ -117,9 +178,14 @@ main(int argc, char *argv[])
       }
    }
 
-   SDL_DestroyTexture(face.texture);
+   SDL_DestroyTexture(predator.texture);
+   SDL_DestroyTexture(prey.texture);
+   free(remote);
+   free(MAZE.data);
 
    SDL_DestroyWindow(window);
+
+   SDLNet_Quit();
    SDL_Quit();
 
    return 0;

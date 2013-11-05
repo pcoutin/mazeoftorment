@@ -7,12 +7,34 @@ void
 init_player(PLAYER *player, short initx,
       short inity,
       unsigned char ishunter,
+      unsigned char playerno,
       PICTURE *sprite)
 {
-   player->x = MAZE.X + TILE_WIDTH * initx + 10;
-   player->y = MAZE.Y + TILE_HEIGHT * inity + 10;
+   player->x = initx;
+   player->y = inity;
    player->type = ishunter;
    player->sprite = sprite;
+   player->dead = 0;
+   player->playerno = playerno;
+}
+
+/*
+ * Checks array of PLAYER structs to see if one contains the location
+ * given...
+ * O(n)
+ */
+PLAYER *
+playerAt(PLAYER *players, short x, short y)
+{
+   int i;
+   for (i = 0; players[i].sprite != NULL; i++)
+   {
+      if (players[i].x == x && players[i].y == y)
+      {
+         return &players[i];
+      }
+   }
+   return NULL;
 }
 
 /*
@@ -22,41 +44,83 @@ init_player(PLAYER *player, short initx,
  * i mean what
  */
 void
-local_player_update(PLAYER *me, const Uint8 *kbdstate)
+local_player_update(PLAYER *me, PLAYER *remote, const Uint8 *kbdstate)
 {
-   int x, y;
-
-   /* Find the player's coordinates in maze row/column */
-   x = (me->x - (int) MAZE.X + 16) / TILE_WIDTH;
-   y = (me->y - (int) MAZE.Y + 16) / TILE_HEIGHT;
-
-#ifdef _DEBUG
-   printf("(%i %i) %x\n", x, y, mazetile(x + 1, y + 1));
-   printf("(me->x = %d  - MAZE.X = %d + 16) / %d = %d\n",
-         me->x, MAZE.X, TILE_WIDTH,
-         x);
-#endif
+   short myx = me->x,
+         myy = me->y;
 
    /* Update based on walls... */
-   if (!mazetile(x, y + 1) && kbdstate[SDL_SCANCODE_DOWN])
+   if (kbdstate[SDL_SCANCODE_DOWN] && !mazetile(me->x + 1, me->y + 2))
    {
-      me->y += TILE_HEIGHT * 2;
+      clearPlayer(me);
+      me->y += 2;
    }
-   else if (!mazetile(x, y - 1) && kbdstate[SDL_SCANCODE_UP])
+   else if (kbdstate[SDL_SCANCODE_UP] && !mazetile(me->x + 1, me->y))
    {
-      me->y -= TILE_HEIGHT * 2;
+      clearPlayer(me);
+      me->y -= 2;
    }
-   else if (!mazetile(x + 1, y) && kbdstate[SDL_SCANCODE_RIGHT])
+   else if (kbdstate[SDL_SCANCODE_RIGHT] && !mazetile(me->x + 2, me->y + 1))
    {
-      me->x += TILE_WIDTH * 2;
+      clearPlayer(me);
+      me->x += 2;
    }
-   else if (!mazetile(x - 1, y) && kbdstate[SDL_SCANCODE_LEFT])
+   else if (kbdstate[SDL_SCANCODE_LEFT] && !mazetile(me->x, me->y + 1))
    {
-      me->x -= TILE_WIDTH * 2;
+      clearPlayer(me);
+      me->x -= 2;
    }
+   else
+   {
+      return;
+   }
+
+   PLAYER *dunce;
+   if ((dunce = playerAt(remote, me->x, me->y)) != NULL)
+   {
+      /* Not a hunter */
+      if (!me->type)
+      {
+         /* Reset/don't move */
+         me->x = myx;
+         me->y = myy;
+      } /* Hunter */
+      else
+      {
+         /* Kill the other player and take its spot :( */
+         clearPlayer(dunce);
+         dunce->dead = 1;
+         dunce->x = -5;
+         dunce->y = -5;
+      }
+   }
+
+   drawPlayer(me);
 }
 
 void
 drawPlayer(PLAYER *player)
 {
+   if (player->dead)
+   {
+      return;
+   }
+   player->sprite->rect.x = MAZE.X + player->x * TILE_WIDTH + 10;
+   player->sprite->rect.y = MAZE.Y + player->y * TILE_HEIGHT + 10;
+   SDL_RenderCopy(renderer,
+         player->sprite->texture,
+         NULL, &player->sprite->rect);
+}
+
+/*
+ * Reset the maze cell that the player is on...
+ */
+void
+clearPlayer(PLAYER *player)
+{
+   player->sprite->rect.x = MAZE.X + player->x * TILE_WIDTH + 10;
+   player->sprite->rect.y = MAZE.Y + player->y * TILE_HEIGHT + 10;
+   SDL_RenderCopy(renderer,
+         black.texture,
+         NULL, &player->sprite->rect);
 }

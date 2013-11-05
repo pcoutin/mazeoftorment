@@ -13,7 +13,7 @@
 #define DEF_HEIGHT   	600
 #define DEF_FULLSCREEN	0
 #define DEF_HWACCEL     1
-#define MAX_PLAYERNUM   8
+#define MAX_PLAYERNUM   32
 
 /* For the maze. */
 #define TILE_WIDTH      16
@@ -40,7 +40,6 @@ void draw_maze(int x, int y);
 MCELL mazetile(int x, int y);
 
 /* entities/player.c */
-void local_player_update(PLAYER *me, const Uint8 *kbdstate);
 
 /* entities/picture.c */
 PICTURE loadPic(char *path);

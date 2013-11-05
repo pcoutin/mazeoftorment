@@ -16,12 +16,13 @@ TYPES
 unsigned short    magical instruction things
 short             Maze player locations (x, y)
 unsigned char     Player number
+unsigned int      sizes of things
 
 Server: is TCP
 
 send the maze for the client.
 * send MAZE_MAGIC
-* send unsigned int, width of maze (in unsigned chars)
+* send unsigned int, data width of maze (in unsigned chars) (MAZE.w)
 * send unsigned int, size of maze in bytes
 * send the whole maze byte by byte
 * wait for MAZE_MAGIC packet
