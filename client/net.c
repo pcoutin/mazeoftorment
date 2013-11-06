@@ -14,13 +14,25 @@ Uint16
 getshort(TCPsocket sock)
 {
    Uint16 cmd;
-   int recvdata = SDLNet_TCP_Recv(sock, &cmd, sizeof(cmd));
+   Uint16 recvdata = SDLNet_TCP_Recv(sock, &cmd, sizeof(cmd));
 
    if (recvdata != sizeof(cmd))
    {
       return 0;
    }
    return SDLNet_Read16(&cmd);
+}
+
+void
+sendshort(TCPsocket sock, Uint16 i)
+{
+   Uint16 cmd;
+   int bytes_sent;
+   SDLNet_Write16(i, &cmd);
+   if ((bytes_sent = SDLNet_TCP_Send(sock, &cmd, sizeof(cmd))) != sizeof(cmd))
+   {
+      fprintf(stderr, "SDLNet_TCP_Send: %s\n", SDLNet_GetError());
+   }
 }
 
 Uint32
@@ -36,13 +48,20 @@ getint(TCPsocket sock)
    return SDLNet_Read32(&cmd);
 }
 
-int
-getmaze(TCPsocket sock)
+void
+getmaze(TCPsocket sock, char *pname, unsigned char *pno)
 {
-   if (getshort(sock) != MAZE_MAGIC)
+   Uint16 n;
+   switch (n = getshort(sock))
    {
-      fprintf(stderr, "Bad magic number from server\n");
-      return -1;
+      case MAZE_MAGIC:
+         break;
+      case SRV_BUSY:
+         fprintf(stderr, "Game is already going on :(\n");
+         exit(EXIT_FAILURE);
+      default:
+         fprintf(stderr, "Bad magic number from server: %x\n", n);
+         exit(EXIT_FAILURE);
    }
 
    MAZE.w = getint(sock);
@@ -54,8 +73,36 @@ getmaze(TCPsocket sock)
    if (SDLNet_TCP_Recv(sock, MAZE.data, MAZE.size) != MAZE.size)
    {
       fprintf(stderr, "Failed to get maze\n");
-      //return -1;
+      exit(EXIT_FAILURE);
    }
 
-   return 0;
+   sendshort(sock, MAZE_MAGIC);     /* Confirmation reply */
+
+   /* Send player name, get player number */
+   SDLNet_TCP_Send(sock, pname, PNAME_SIZE);
+   SDLNet_TCP_Recv(sock, pno, sizeof(unsigned char));
+
+}
+
+void
+init_player(TCPsocket sock, PLAYER *player, PICTURE *sprite)
+{
+   short loc;
+   char *pname;
+
+   SDLNet_TCP_Recv(sock, &player->playerno, sizeof(unsigned char));
+
+   SDLNet_TCP_Recv(sock, &loc, sizeof(loc));
+   player->x = SDLNet_Read16(&loc);
+
+   SDLNet_TCP_Recv(sock, &loc, sizeof(loc));
+   player->y = SDLNet_Read16(&loc);
+
+   pname = malloc(PNAME_SIZE);
+   SDLNet_TCP_Recv(sock, pname, PNAME_SIZE);
+
+   player->name = pname;
+   player->type = 0; /* probably not hunter, don't know yet */
+   player->sprite = sprite;
+   player->dead = 0;
 }

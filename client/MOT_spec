@@ -9,6 +9,7 @@ PLAYER_MOV     0x4D4F
 PLAYER_DC      0x4443
 PLAYER_DIE     0x4B4F
 PLAYER_WIN     0x5749
+SRV_BUSY       0xEEEE
 
 all the magic numbers will be unsigned short...
 
@@ -16,6 +17,7 @@ TYPES
 unsigned short    magical instruction things
 short             Maze player locations (x, y)
 unsigned char     Player number
+char              Player name, SHOULD BE 32 BYTES (pad with zeroes)
 unsigned int      sizes of things
 
 Server: is TCP
@@ -38,11 +40,15 @@ add players to the connecting pre-game screen as they connect (as well as
 the ones connected before this player, if any)
 * send ADD_PLAYER
 * send unsigned char player number
+* send short X, Y in maze
 * send null-terminated string for the name
 
 Choose hunter (which means the game begins)
 * send HUNTER
 * send the unsigned char value of the hunter player
+
+- If the game already started and someone tries to connect, send SRV_BUSY
+  and close the connection...
 
 Player updates
 ==============

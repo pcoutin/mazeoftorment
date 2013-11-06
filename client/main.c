@@ -20,6 +20,8 @@ main(int argc, char *argv[])
    Uint32 time;
    IPaddress   srv_ip;
    TCPsocket   srv_sock;
+   char myname[PNAME_SIZE];
+   unsigned char myno;
    int i;
 
    /* debug, should remove later */
@@ -38,6 +40,12 @@ main(int argc, char *argv[])
    }
 
    parsecfg(&config);
+
+   /*
+    * Get player name.
+    */
+   printf("Wow such name: ");
+   gets(myname);
 
    /*
     * Connect to server!
@@ -63,10 +71,7 @@ main(int argc, char *argv[])
     * begins.
     */
 
-   if (getmaze(srv_sock))
-   {
-      exit(EXIT_FAILURE);
-   }
+   getmaze(srv_sock, myname, &myno);
 
    window = SDL_CreateWindow(
          "MAZE OF TORMENT",
@@ -99,7 +104,7 @@ main(int argc, char *argv[])
    MAZE.Y = (config.win_height - MAZE.h * 16) / 2;
 
    /* Type is 1 (hunter)... FOR NOW */
-   init_player(&me, 6, 6, 1, 0, &predator);
+   init_localplayer(&me, 6, 6, 1, myno, &predator, myname);
 
    /*
     * Draw things.
@@ -111,14 +116,21 @@ main(int argc, char *argv[])
 
    drawPlayer(&me);
 
-   remote = calloc(4, sizeof(PLAYER));
+   remote = calloc(MAX_PLAYERNUM, sizeof(PLAYER));
 
-   init_player(remote, 0, 0, 0, 1, &prey);
-   init_player(remote + 1, 2, 0, 0, 2, &prey);
+   while (getshort(srv_sock) == ADD_PLAYER)
+   {
+      PLAYER cur_remote;
+      init_player(srv_sock, &cur_remote, &prey);
+      *(remote + cur_remote.playerno) = cur_remote;
+      printf("Added player %d at (%d, %d)\n", cur_remote.playerno,
+            cur_remote.x, cur_remote.y);
+   }
 
    for (i = 0; (remote + i)->sprite != NULL; i++)
    {
       drawPlayer(remote + i);
+      puts("draw player");
    }
 
    /*

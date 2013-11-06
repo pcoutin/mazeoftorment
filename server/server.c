@@ -12,14 +12,17 @@
 #define MOTSRV_PORT     "6666"
 #define BACKLOG         8
 
-#define MAZE_MAGIC     0x6D7A
-#define ADD_PLAYER     0x4E45
-#define HUNTER         0x4855
-#define ILLEGAL_MOV    0xF000
-#define PLAYER_MOV     0x4D4F
-#define PLAYER_DC      0x4443
-#define PLAYER_DIE     0x4B4F
-#define PLAYER_WIN     0x5749
+#define MAZE_MAGIC      0x6D7A
+#define ADD_PLAYER      0x4E45
+#define HUNTER          0x4855
+#define ILLEGAL_MOV     0xF000
+#define PLAYER_MOV      0x4D4F
+#define PLAYER_DC       0x4443
+#define PLAYER_DIE      0x4B4F
+#define PLAYER_WIN      0x5749
+#define SRV_BUSY        0xEEEE
+
+int mrand(int floor, int ceil);
 
 /*
  * Thanks to Brian Hall for Beej's Guide to Network Programming
@@ -128,23 +131,61 @@ main(int argc, char *argv[])
       return 1;
    }
 
-   /* Send maze magic */
+   /*
+    * When a player first connects, send maze magic, data width, size.
+    * Then send the maze itself. Then await confirmation.
+    */
    magic = htons(MAZE_MAGIC);
    sendall(csockfd, (char *) &magic, sizeof(magic));
 
-   /* Send maze data width */
    u = htonl(MAZE.w);
    sendall(csockfd, (char *) &u, sizeof(u));
 
-   /* Send size of maze */
    u = htonl(MAZE.size);
    sendall(csockfd, (char *) &u, sizeof(u));
 
-   /* Send the maze itself... */
    sendall(csockfd, MAZE.data, MAZE.size);
 
+   if (recv(csockfd, &magic, sizeof(magic), 0) != sizeof(magic) ||
+         ntohs(magic) != MAZE_MAGIC)
+   {
+      fprintf(stderr, "Failed to get client confirmation\n");
+      exit(EXIT_FAILURE);
+   }
+
    /*
-    * Free things and exit.
+    * Receive player name (32 byte string), then send player number.
+    */
+   char PLAYANAME[32];
+   recv(csockfd, &PLAYANAME, 32, 0);
+   printf("%s connected!!!\n", PLAYANAME);
+
+   unsigned char pnum = 0;
+   sendall(csockfd, &pnum, sizeof(pnum));
+
+   /*
+    * Add a few players scattered across the maze, then pick one as the
+    * predator...
+    */
+   for (pnum = 0; pnum < 12; pnum++)
+   {
+      /* player no */
+      magic = htons(ADD_PLAYER);
+      sendall(csockfd, (char *) &magic, sizeof(magic));
+      sendall(csockfd, &pnum, sizeof(pnum));
+
+      /* x and y */
+      magic = htons(mrand(0, 19) * 2);
+      sendall(csockfd, (char *) &magic, sizeof(magic));
+
+      magic = htons(mrand(0, 19) * 2);
+      sendall(csockfd, (char *) &magic, sizeof(magic));
+
+      sendall(csockfd, PLAYANAME, 32);
+   }
+
+   /*
+    * Free things (sockets, addrinfo, player data, maze) and exit.
     */
    close(ssockfd);
    close(csockfd);

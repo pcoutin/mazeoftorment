@@ -121,7 +121,7 @@ filledcell_check(unsigned int x, unsigned int y)
    return ret;
 }
 
-static int
+int
 mrand(int floor, int ceil)
 {
    return (int) (drand48() * (ceil + 1 - floor)) + floor;

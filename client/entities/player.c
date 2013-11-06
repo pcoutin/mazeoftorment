@@ -4,11 +4,13 @@
  * initx and inity are in terms of the maze cells, not pixels.
  */
 void
-init_player(PLAYER *player, short initx,
+init_localplayer(PLAYER *player,
+      short initx,
       short inity,
       unsigned char ishunter,
       unsigned char playerno,
-      PICTURE *sprite)
+      PICTURE *sprite,
+      char *pname)
 {
    player->x = initx;
    player->y = inity;
@@ -16,6 +18,7 @@ init_player(PLAYER *player, short initx,
    player->sprite = sprite;
    player->dead = 0;
    player->playerno = playerno;
+   player->name = pname;
 }
 
 /*
