@@ -52,6 +52,8 @@ void
 getmaze(TCPsocket sock, char *pname, unsigned char *pno)
 {
    Uint16 n;
+   int recv;
+
    switch (n = getshort(sock))
    {
       case MAZE_MAGIC:
@@ -68,12 +70,15 @@ getmaze(TCPsocket sock, char *pname, unsigned char *pno)
    MAZE.size = getint(sock);
    MAZE.h = MAZE.size / MAZE.w;
 
+   printf("w size h = %d %d %d\n", MAZE.w, MAZE.size, MAZE.h);
+
    MAZE.data = malloc(MAZE.size);
 
-   if (SDLNet_TCP_Recv(sock, MAZE.data, MAZE.size) != MAZE.size)
+   if ((recv = SDLNet_TCP_Recv(sock, MAZE.data, MAZE.size)) != MAZE.size)
    {
-      fprintf(stderr, "Failed to get maze\n");
-      exit(EXIT_FAILURE);
+      fprintf(stderr, "Failed to get maze. Got %d bytes, expected %d. wat %s\n",
+            recv, MAZE.size, SDLNet_GetError());
+//      exit(EXIT_FAILURE);
    }
 
    sendshort(sock, MAZE_MAGIC);     /* Confirmation reply */

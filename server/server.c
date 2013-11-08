@@ -8,7 +8,7 @@
 #include <errno.h>
 #include "../common/mot_maze.h"
 
-#define MOTSRV_ADDR     "10.0.0.2"
+#define MOTSRV_ADDR     "127.0.0.1"
 #define MOTSRV_PORT     "6666"
 #define BACKLOG         8
 
@@ -174,7 +174,7 @@ main(int argc, char *argv[])
       sendall(csockfd, (char *) &magic, sizeof(magic));
       sendall(csockfd, &pnum, sizeof(pnum));
 
-      /* x and y */
+      /* x and y, there can be collisions but who cares?????? */
       magic = htons(mrand(0, 19) * 2);
       sendall(csockfd, (char *) &magic, sizeof(magic));
 
