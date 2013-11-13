@@ -1,8 +1,11 @@
 #include <stddef.h>
+#include <SDL2/SDL.h>
+#include "../../common/mot_maze.h"
+#include "entities.h"
 #include "../mot.h"
 
 static void
-draw_mazetile(MCELL tile, int x, int y)
+draw_mazetile(unsigned char tile, int x, int y)
 {
    if (tile & N_WALL)
    {
@@ -76,10 +79,10 @@ draw_maze(int x, int y)
 
 }
 
-MCELL
+unsigned char
 mazetile(int x, int y)
 {
-   MCELL *ret = MAZE.data + x + (MAZE.w * y);
+   unsigned char *ret = MAZE.data + x + (MAZE.w * y);
 
    if (ret - MAZE.data > MAZE.size || ret - MAZE.data < 0)
    {

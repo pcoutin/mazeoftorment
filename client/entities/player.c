@@ -1,3 +1,6 @@
+#include <SDL2/SDL.h>
+#include "../../common/mot_maze.h"
+#include "entities.h"
 #include "../mot.h"
 
 /*

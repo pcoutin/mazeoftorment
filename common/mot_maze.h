@@ -6,11 +6,9 @@
 #define S_WALL          0x4
 #define W_WALL          0x8
 
-typedef unsigned char   MCELL;
-
 struct
 {
-   MCELL *data;
+   unsigned char *data;
 
    /*
     * w and h are the "data w": not the number of cells in a row or

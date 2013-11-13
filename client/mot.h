@@ -1,11 +1,13 @@
 #ifndef _MOT_H_
 #define _MOT_H_
 
+/*
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include "../common/mot_maze.h"
 
 #include "entities/entities.h"
+*/
 
 #define CFG_FNAME       "config.ini"
 
@@ -21,7 +23,9 @@
 
 SDL_Renderer *renderer;
 
-typedef struct
+typedef struct _clc_config CLC_CONFIG;
+
+struct _clc_config
 {
    int win_width;
    int win_height;
@@ -29,7 +33,7 @@ typedef struct
    Uint32 renderflags;
    char *defaultsrv;
    char *defaultport;
-} CLC_CONFIG;
+};
 
 
 /* cfg.c */
@@ -37,7 +41,7 @@ void parsecfg(CLC_CONFIG *config);
 
 /* entities/maze.c */
 void draw_maze(int x, int y);
-MCELL mazetile(int x, int y);
+unsigned char mazetile(int x, int y);
 
 /* entities/player.c */
 

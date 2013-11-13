@@ -8,7 +8,7 @@
 #include <errno.h>
 #include "mot_maze.h"
 
-#define MOTSRV_ADDR     "0.0.0.0"
+#define MOTSRV_ADDR     "10.0.0.2"
 #define MOTSRV_PORT     "6666"
 #define BACKLOG         8
 
@@ -54,9 +54,7 @@ main(argc, argv)
 	unsigned char pnum;
 
 	struct hostent *he;
-	unsigned long myaddr, mynet;
 	struct sockaddr *caddr;
-	struct in_addr saddr;
 	int addr_size;
 
 	struct sockaddr_in my_addr;
@@ -66,60 +64,60 @@ main(argc, argv)
 	 */
 	genmaze(20, 20);
 
-	myaddr = inet_addr("10.0.0.2");
-	mynet = inet_network("0.0.0.0");
-	saddr = inet_makeaddr(mynet, myaddr);
-
-	/*
-	 * Allocate socket file descriptor with address information acquired
-	 * from getaddrinfo. 
-	 */
 	ssockfd = socket(PF_INET, SOCK_STREAM, 0);
 
 	if (ssockfd == -1) {
 		perror("Failed to allocate socket descriptor.");
 		return 1;
 	}
+
 	/*
 	 * If system thinks the socket is on use but it isn't, fix it... 
 	 */
+
 	i = 1;
-	if (setsockopt(ssockfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) == -1) {
+	if (setsockopt(ssockfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof i)) {
 		perror("setsockopt");
 		return 1;
 	}
+
 	/*
 	 * Bind socket to port. 
 	 */
 
 	my_addr.sin_family = AF_INET;
 	my_addr.sin_port = htons(6666);
-	my_addr.sin_addr.s_addr = myaddr;
+	my_addr.sin_addr.s_addr = inet_addr(MOTSRV_ADDR);
 	memset(my_addr.sin_zero, 0, sizeof my_addr.sin_zero);
 
-	if (bind(ssockfd, (struct sockaddr *) &my_addr, sizeof(my_addr)) == -1) {
+	if (bind(ssockfd, (struct sockaddr *) &my_addr, sizeof(my_addr))
+	    == -1) {
 		perror("Failed to bind to port");
 		return 1;
 	}
+
 	if (listen(ssockfd, BACKLOG) == -1) {
 		perror("Failed to listen to connections");
 		return 1;
 	}
 
-	addr_size = sizeof(caddr);
 	/*
 	 * Accept connections, finally! 
 	 */
+
+	addr_size = sizeof(caddr);
 	csockfd = accept(ssockfd, (struct sockaddr *) & caddr, &addr_size);
 
 	if (csockfd == -1) {
 		perror("Cannot accept connections");
 		return 1;
 	}
+
 	/*
 	 * When a player first connects, send maze magic, data width, size.
 	 * Then send the maze itself. Then await confirmation. 
 	 */
+
 	magic = htons(MAZE_MAGIC);
 	sendall(csockfd, (char *) &magic, sizeof(magic));
 
@@ -136,6 +134,7 @@ main(argc, argv)
 		fprintf(stderr, "Failed to get client confirmation\n");
 		exit(1);
 	}
+
 	/*
 	 * Receive player name (32 byte string), then send player number. 
 	 */

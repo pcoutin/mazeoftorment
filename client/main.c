@@ -1,8 +1,16 @@
+/*
+ * Simple client for the Maze of Torment game.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <SDL2/SDL_net.h>
 
+#include "../common/mot_maze.h"
+#include "entities/entities.h"
 #include "mot.h"
 #include "net.h"
 
@@ -24,9 +32,6 @@ main(int argc, char *argv[])
    unsigned char myno;
    int i;
 
-   /* debug, should remove later */
-   FILE        *mfile;
-
    if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS) == -1)
    {
       fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
@@ -45,7 +50,7 @@ main(int argc, char *argv[])
     * Get player name.
     */
    printf("Wow such name: ");
-   gets(myname);
+   fgets(myname, PNAME_SIZE, stdin);
 
    /*
     * Connect to server!

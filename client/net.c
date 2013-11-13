@@ -1,6 +1,9 @@
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "../common/mot_maze.h"
+#include "entities/entities.h"
 #include "mot.h"
 #include "net.h"
 
@@ -9,6 +12,29 @@ killPlayer(unsigned short playerno)
 {
    return 0;
 }
+
+size_t
+recvall(TCPsocket sock, unsigned char *data, size_t len)
+{
+   size_t n, brecv = 0;
+   size_t bytesleft = len;
+
+   while (brecv < len)
+   {
+      n = SDLNet_TCP_Recv(sock, data + brecv, bytesleft);
+      printf("got %ld\n", n);
+
+      if (n == -1)
+      {
+         fprintf(stderr, "SDLNet_TCP_Recv: %s\n", SDLNet_GetError());
+         return -1;
+      }
+      brecv += n;
+      bytesleft -= n;
+   }
+   return brecv;
+}
+
 
 Uint16
 getshort(TCPsocket sock)
@@ -70,15 +96,16 @@ getmaze(TCPsocket sock, char *pname, unsigned char *pno)
    MAZE.size = getint(sock);
    MAZE.h = MAZE.size / MAZE.w;
 
-   printf("w size h = %d %d %d\n", MAZE.w, MAZE.size, MAZE.h);
+   printf("w size h = %ld %ld %ld\n", MAZE.w, MAZE.size, MAZE.h);
 
    MAZE.data = malloc(MAZE.size);
 
-   if ((recv = SDLNet_TCP_Recv(sock, MAZE.data, MAZE.size)) != MAZE.size)
+   // uh no
+   if ((recv = recvall(sock, MAZE.data, MAZE.size)) != MAZE.size)
    {
-      fprintf(stderr, "Failed to get maze. Got %d bytes, expected %d. wat %s\n",
+      fprintf(stderr, "Failed to get maze. Got %d bytes, expected %ld. %s\n",
             recv, MAZE.size, SDLNet_GetError());
-//      exit(EXIT_FAILURE);
+      exit(EXIT_FAILURE);
    }
 
    sendshort(sock, MAZE_MAGIC);     /* Confirmation reply */

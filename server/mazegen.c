@@ -12,14 +12,14 @@ static void print_maze_old();
 static void print_code(unsigned char dircode);
 #endif
 
-static MCELL *
+static unsigned char *
 mazecell(unsigned int x, unsigned int y)
 {
    /*
     * The first cell will actually be at MAZE.w + 1.
     * The stuff above is a wall.
     */
-   MCELL *ret = MAZE.data + (MAZE.w + 1) + (2 * x) + (MAZE.w * 2 * y);
+   unsigned char *ret = MAZE.data + (MAZE.w + 1) + (2 * x) + (MAZE.w * 2 * y);
 
    if (ret - MAZE.data > MAZE.size)
    {
@@ -232,10 +232,10 @@ step()
  * context of the whole maze (walls and passages).
  * 0: no edges. 255: out of range.
  */
-static MCELL
-edgecheck(MCELL *c)
+static unsigned char
+edgecheck(unsigned char *c)
 {
-   MCELL ret = 0;
+   unsigned char ret = 0;
    size_t curr = (size_t) (c - MAZE.data);
 
    if (c > MAZE.data + MAZE.size)
@@ -287,10 +287,10 @@ edgecheck(MCELL *c)
  *
  * Lone wall: just remove it
  */
-static MCELL
-setintersect_type(MCELL *curr)
+static unsigned char
+setintersect_type(unsigned char *curr)
 {
-   MCELL ret = 0, ec = edgecheck(curr);
+   unsigned char ret = 0, ec = edgecheck(curr);
 
    if (!(edgecheck(curr) & N_WALL) && *(curr - MAZE.w))
    {
@@ -323,8 +323,8 @@ genmaze(unsigned int width, unsigned int height)
    MAZE.height =  height;
    MAZE.w =       MAZE.width * 2 + 1;
    MAZE.h =       MAZE.height * 2 + 1;
-   MAZE.size =    MAZE.w * MAZE.h * sizeof(MCELL);
-   MAZE.data =    (MCELL *) malloc(MAZE.size);
+   MAZE.size =    MAZE.w * MAZE.h * sizeof(unsigned char);
+   MAZE.data =    (unsigned char *) malloc(MAZE.size);
 
    memset(MAZE.data, 1, MAZE.size);
    srand48(time(NULL));
@@ -432,7 +432,7 @@ main(int argc, char *argv[])
    mfile = fopen("maze.dat", "w");
 
    fwrite(&MAZE, sizeof(MAZE), 1, mfile);
-   fwrite(MAZE.data, sizeof(MCELL), MAZE.size, mfile);
+   fwrite(MAZE.data, sizeof(unsigned char), MAZE.size, mfile);
 
    fclose(mfile);
    free(MAZE.data);
