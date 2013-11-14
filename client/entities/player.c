@@ -1,27 +1,35 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_net.h>
 #include "../../common/mot_maze.h"
 #include "entities.h"
 #include "../mot.h"
+#include "../net.h"
 
-/*
- * initx and inity are in terms of the maze cells, not pixels.
- */
 void
-init_localplayer(PLAYER *player,
-      short initx,
-      short inity,
-      unsigned char ishunter,
-      unsigned char playerno,
-      PICTURE *sprite,
-      char *pname)
+init_player(TCPsocket sock, PLAYER *player)
 {
-   player->x = initx;
-   player->y = inity;
-   player->type = ishunter;
-   player->sprite = sprite;
-   player->dead = 0;
-   player->playerno = playerno;
+   short loc;
+   char *pname;
+
+   SDLNet_TCP_Recv(sock, &player->playerno, sizeof(unsigned char));
+
+   SDLNet_TCP_Recv(sock, &loc, sizeof(loc));
+   player->x = SDLNet_Read16(&loc);
+
+   SDLNet_TCP_Recv(sock, &loc, sizeof(loc));
+   player->y = SDLNet_Read16(&loc);
+
+   pname = malloc(PNAME_SIZE);
+   SDLNet_TCP_Recv(sock, pname, PNAME_SIZE);
+
    player->name = pname;
+
+#ifdef _DEBUG
+   printf("Got %s (%d)", pname, player->playerno);
+#endif
+
+   player->sprite = &psprite;
+   player->dead = 0;
 }
 
 /*

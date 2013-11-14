@@ -10,8 +10,6 @@ struct _mot_picture
    SDL_Rect rect;
 };
 
-PICTURE black;
-
 struct _mot_player
 {
    char *name;
@@ -25,13 +23,20 @@ struct _mot_player
 
 };
 
-void init_localplayer(PLAYER *, short, short, unsigned char,
-      unsigned char, PICTURE *, char *);
+void init_player(TCPsocket sock, PLAYER *player);
 
 void drawPlayer(PLAYER *);
 
 void local_player_update(PLAYER *, PLAYER *, const Uint8 *);
 
 void clearPlayer(PLAYER *);
+
+
+/*
+ * GLOBALS
+ */
+
+// Black tile to erase players as they move, and hunter/prey sprites.
+PICTURE black, psprite, hsprite;
 
 #endif

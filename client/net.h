@@ -13,9 +13,9 @@
 
 #define PNAME_SIZE      32
 
+size_t recvall(TCPsocket sock, unsigned char *data, size_t len);
 Uint16 getshort(TCPsocket sock);
 Uint32 getint(TCPsocket sock);
-void getmaze(TCPsocket sock, char *pname, unsigned char *pno);
-void init_player(TCPsocket sock, PLAYER *player, PICTURE *sprite);
+void getmaze(TCPsocket sock);
 
 #endif

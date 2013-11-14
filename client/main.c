@@ -18,16 +18,15 @@ int
 main(int argc, char *argv[])
 {
    SDL_Window  *window;
-   PICTURE     predator;
-   PICTURE     prey;
    CLC_CONFIG  config;
    Uint8       *kbdstate;
    SDL_Event   e;
-   PLAYER      me;
-   PLAYER      *remote;
-   Uint32 time;
+   PLAYER      *me;
+   PLAYER      *player;
+   Uint32      time;
    IPaddress   srv_ip;
    TCPsocket   srv_sock;
+   Uint16      magic;
    char myname[PNAME_SIZE];
    unsigned char myno;
    int i;
@@ -52,6 +51,15 @@ main(int argc, char *argv[])
    printf("Wow such name: ");
    fgets(myname, PNAME_SIZE, stdin);
 
+   for (i = 0; i < PNAME_SIZE; i++)
+   {
+      if (myname[i] == '\n')
+      {
+         myname[i] = '\0';
+         break;
+      }
+   }
+
    /*
     * Connect to server!
     */
@@ -71,12 +79,13 @@ main(int argc, char *argv[])
       exit(EXIT_FAILURE);
    }
 
+
    /*
     * Get maze, add connecting players to buffer and wait until the game
     * begins.
     */
 
-   getmaze(srv_sock, myname, &myno);
+   getmaze(srv_sock);
 
    window = SDL_CreateWindow(
          "MAZE OF TORMENT",
@@ -98,18 +107,76 @@ main(int argc, char *argv[])
 
    renderer = SDL_CreateRenderer(window, -1, config.renderflags);
 
-   predator = loadPic("img/predator.gif");
-   prey     = loadPic("img/prey.gif");
+   hsprite  = loadPic("img/predator.gif");
+   psprite  = loadPic("img/prey.gif");
    black    = loadPic("img/black.gif");
 
    /*
-    * Initialize maze.
+    * Initialize maze and get the LOCAL player, then the REMOTE players.
     */
    MAZE.X = (config.win_width - MAZE.w * 16) / 2;
    MAZE.Y = (config.win_height - MAZE.h * 16) / 2;
 
-   /* Type is 1 (hunter)... FOR NOW */
-   init_localplayer(&me, 6, 6, 1, myno, &predator, myname);
+   SDLNet_TCP_Send(srv_sock, myname, PNAME_SIZE);
+
+   if ((magic = getshort(srv_sock)) != ADD_PLAYER)
+   {
+      fprintf(stderr, "Bad magic number %X from server\n", magic);
+      exit(EXIT_FAILURE);
+   }
+
+   init_player(srv_sock, &me);
+
+   player = calloc(MAX_PLAYERNUM, sizeof(PLAYER));
+
+   while ((magic = getshort(srv_sock)) == ADD_PLAYER)
+   {
+      PLAYER cur_player;
+      init_player(srv_sock, &cur_player);
+      *(player + cur_player.playerno) = cur_player;
+      printf("Player %s (%d) connected, at (%d, %d)\n", cur_player.name,
+            cur_player.playerno, cur_player.x, cur_player.y);
+   }
+
+   /*
+    * Get the hunter.
+    */
+   if (magic == HUNTER)
+   {
+      unsigned char hunter;
+
+      SDLNet_TCP_Recv(srv_sock, &hunter, 1);
+      printf("Hunter is %d\n", hunter);
+
+      if (me.playerno == hunter)
+      {
+         puts("Found hunter");
+         me.type = 1;
+         me.sprite = &hsprite;
+      }
+      else
+      {
+         /*
+          * TODO: Implement a decent function to get a PLAYER by its
+          * number.
+          */
+         for (i = 0; (player + i)->sprite != NULL; ++i)
+         {
+            if ((player + i)->playerno == hunter)
+            {
+               puts("Found hunter");
+               (player+i)->type = 1;
+               (player+i)->sprite = &hsprite;
+               break;
+            }
+         }
+      }
+   }
+   else
+   {
+      fprintf(stderr, "Bad magic number %X from server\n", magic);
+      exit(EXIT_FAILURE);
+   }
 
    /*
     * Draw things.
@@ -121,21 +188,10 @@ main(int argc, char *argv[])
 
    drawPlayer(&me);
 
-   remote = calloc(MAX_PLAYERNUM, sizeof(PLAYER));
 
-   while (getshort(srv_sock) == ADD_PLAYER)
+   for (i = 0; (player + i)->sprite != NULL; ++i)
    {
-      PLAYER cur_remote;
-      init_player(srv_sock, &cur_remote, &prey);
-      *(remote + cur_remote.playerno) = cur_remote;
-      printf("Added player %d at (%d, %d)\n", cur_remote.playerno,
-            cur_remote.x, cur_remote.y);
-   }
-
-   for (i = 0; (remote + i)->sprite != NULL; i++)
-   {
-      drawPlayer(remote + i);
-      puts("draw player");
+      drawPlayer(player + i);
    }
 
    /*
@@ -166,7 +222,7 @@ main(int argc, char *argv[])
             break;
          }
 
-         local_player_update(&me, remote, SDL_GetKeyboardState(NULL));
+         local_player_update(&me, player, SDL_GetKeyboardState(NULL));
       }
 
       SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
@@ -183,9 +239,10 @@ main(int argc, char *argv[])
       }
    }
 
-   SDL_DestroyTexture(predator.texture);
-   SDL_DestroyTexture(prey.texture);
-   free(remote);
+   SDL_DestroyTexture(psprite.texture);
+   SDL_DestroyTexture(hsprite.texture);
+   SDL_DestroyTexture(black.texture);
+   free(player);
    free(MAZE.data);
 
    SDL_DestroyWindow(window);

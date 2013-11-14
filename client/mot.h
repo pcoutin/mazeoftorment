@@ -1,14 +1,6 @@
 #ifndef _MOT_H_
 #define _MOT_H_
 
-/*
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include "../common/mot_maze.h"
-
-#include "entities/entities.h"
-*/
-
 #define CFG_FNAME       "config.ini"
 
 #define DEF_WIDTH    	800
@@ -21,6 +13,7 @@
 #define TILE_WIDTH      16
 #define TILE_HEIGHT     16
 
+/* GLOBALS */
 SDL_Renderer *renderer;
 
 typedef struct _clc_config CLC_CONFIG;

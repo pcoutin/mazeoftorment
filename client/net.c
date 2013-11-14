@@ -8,7 +8,7 @@
 #include "net.h"
 
 int
-killPlayer(unsigned short playerno)
+killPlayer(unsigned short playerno, PLAYER *player)
 {
    return 0;
 }
@@ -22,7 +22,10 @@ recvall(TCPsocket sock, unsigned char *data, size_t len)
    while (brecv < len)
    {
       n = SDLNet_TCP_Recv(sock, data + brecv, bytesleft);
-      printf("got %ld\n", n);
+
+#ifdef _DEBUG
+      printf("[DEBUG] recvall got %ld\n", n);
+#endif
 
       if (n == -1)
       {
@@ -40,7 +43,7 @@ Uint16
 getshort(TCPsocket sock)
 {
    Uint16 cmd;
-   Uint16 recvdata = SDLNet_TCP_Recv(sock, &cmd, sizeof(cmd));
+   Uint16 recvdata = recvall(sock, (unsigned char *) &cmd, sizeof(cmd));
 
    if (recvdata != sizeof(cmd))
    {
@@ -65,7 +68,7 @@ Uint32
 getint(TCPsocket sock)
 {
    Uint32 cmd;
-   int recvdata = SDLNet_TCP_Recv(sock, &cmd, sizeof(cmd));
+   int recvdata = recvall(sock, (unsigned char *) &cmd, sizeof(cmd));
 
    if (recvdata != sizeof(cmd))
    {
@@ -75,7 +78,7 @@ getint(TCPsocket sock)
 }
 
 void
-getmaze(TCPsocket sock, char *pname, unsigned char *pno)
+getmaze(TCPsocket sock)
 {
    Uint16 n;
    int recv;
@@ -96,7 +99,9 @@ getmaze(TCPsocket sock, char *pname, unsigned char *pno)
    MAZE.size = getint(sock);
    MAZE.h = MAZE.size / MAZE.w;
 
-   printf("w size h = %ld %ld %ld\n", MAZE.w, MAZE.size, MAZE.h);
+#ifdef _DEBUG
+   printf("[DEBUG] maze w size h = %ld %ld %ld\n", MAZE.w, MAZE.size, MAZE.h);
+#endif
 
    MAZE.data = malloc(MAZE.size);
 
@@ -110,31 +115,4 @@ getmaze(TCPsocket sock, char *pname, unsigned char *pno)
 
    sendshort(sock, MAZE_MAGIC);     /* Confirmation reply */
 
-   /* Send player name, get player number */
-   SDLNet_TCP_Send(sock, pname, PNAME_SIZE);
-   SDLNet_TCP_Recv(sock, pno, sizeof(unsigned char));
-
-}
-
-void
-init_player(TCPsocket sock, PLAYER *player, PICTURE *sprite)
-{
-   short loc;
-   char *pname;
-
-   SDLNet_TCP_Recv(sock, &player->playerno, sizeof(unsigned char));
-
-   SDLNet_TCP_Recv(sock, &loc, sizeof(loc));
-   player->x = SDLNet_Read16(&loc);
-
-   SDLNet_TCP_Recv(sock, &loc, sizeof(loc));
-   player->y = SDLNet_Read16(&loc);
-
-   pname = malloc(PNAME_SIZE);
-   SDLNet_TCP_Recv(sock, pname, PNAME_SIZE);
-
-   player->name = pname;
-   player->type = 0; /* probably not hunter, don't know yet */
-   player->sprite = sprite;
-   player->dead = 0;
 }
