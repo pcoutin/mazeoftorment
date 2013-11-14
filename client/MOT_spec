@@ -41,6 +41,8 @@ send current client player's info (same as for other players)
 * send unsigned char player number
 * send short X, Y in maze
 * send the same name string back
+(OR JUST SEND THE PNO AND THEN later send all of the players in order,
+including the local player)
 
 add players to the connecting pre-game screen as they connect (as well as
 the ones connected before this player, if any)
