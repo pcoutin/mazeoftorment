@@ -22,6 +22,9 @@ unsigned int      sizes of things
 
 Server: is TCP
 
+- If the game already started and someone tries to connect, send SRV_BUSY
+  and close the connection...
+
 send the maze for the client.
 * send MAZE_MAGIC
 * send unsigned int, data width of maze (in unsigned chars) (MAZE.w)
@@ -35,6 +38,7 @@ before connecting)
 
 send player's number
 * send unsigned char
+* send short X, Y in maze
 
 add players to the connecting pre-game screen as they connect (as well as
 the ones connected before this player, if any)
@@ -46,9 +50,6 @@ the ones connected before this player, if any)
 Choose hunter (which means the game begins)
 * send HUNTER
 * send the unsigned char value of the hunter player
-
-- If the game already started and someone tries to connect, send SRV_BUSY
-  and close the connection...
 
 Player updates
 ==============
