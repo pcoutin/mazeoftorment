@@ -36,9 +36,11 @@ expect player name right after sending the maze (the player chooses name
 before connecting)
 * receive null terminated string
 
-send player's number
-* send unsigned char
+send current client player's info (same as for other players)
+* send ADD_PLAYER
+* send unsigned char player number
 * send short X, Y in maze
+* send the same name string back
 
 add players to the connecting pre-game screen as they connect (as well as
 the ones connected before this player, if any)
