@@ -60,6 +60,7 @@ main(int argc, char *argv[])
       }
    }
 
+
    /*
     * Connect to server!
     */
@@ -69,6 +70,7 @@ main(int argc, char *argv[])
       fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
       exit(EXIT_FAILURE);
    }
+
 
    /*
     * Bind socket!
@@ -112,22 +114,21 @@ main(int argc, char *argv[])
    black    = loadPic("img/black.gif");
 
    /*
-    * Initialize maze and get the LOCAL player, then the REMOTE players.
+    * Initialize maze, and send player name.
     */
    MAZE.X = (config.win_width - MAZE.w * 16) / 2;
    MAZE.Y = (config.win_height - MAZE.h * 16) / 2;
 
    SDLNet_TCP_Send(srv_sock, myname, PNAME_SIZE);
 
-   if ((magic = getshort(srv_sock)) != ADD_PLAYER)
-   {
-      fprintf(stderr, "Bad magic number %X from server\n", magic);
-      exit(EXIT_FAILURE);
-   }
 
-   init_player(srv_sock, &me);
+   /*
+    * Initialize maze and get the LOCAL player, then the REMOTE players.
+    */
 
-   player = calloc(MAX_PLAYERNUM, sizeof(PLAYER));
+   SDLNet_TCP_Recv(srv_sock, &myno, 1);
+
+   player = calloc(MAX_PLAYERNUM + 1, sizeof(PLAYER));
 
    while ((magic = getshort(srv_sock)) == ADD_PLAYER)
    {
@@ -138,6 +139,8 @@ main(int argc, char *argv[])
             cur_player.playerno, cur_player.x, cur_player.y);
    }
 
+   me = player + myno;
+
    /*
     * Get the hunter.
     */
@@ -146,31 +149,9 @@ main(int argc, char *argv[])
       unsigned char hunter;
 
       SDLNet_TCP_Recv(srv_sock, &hunter, 1);
-      printf("Hunter is %d\n", hunter);
 
-      if (me.playerno == hunter)
-      {
-         puts("Found hunter");
-         me.type = 1;
-         me.sprite = &hsprite;
-      }
-      else
-      {
-         /*
-          * TODO: Implement a decent function to get a PLAYER by its
-          * number.
-          */
-         for (i = 0; (player + i)->sprite != NULL; ++i)
-         {
-            if ((player + i)->playerno == hunter)
-            {
-               puts("Found hunter");
-               (player+i)->type = 1;
-               (player+i)->sprite = &hsprite;
-               break;
-            }
-         }
-      }
+      (player + hunter)->type = 1;
+      (player + hunter)->sprite = &hsprite;
    }
    else
    {
@@ -186,7 +167,7 @@ main(int argc, char *argv[])
    /* Draw the maze in the middle of the screen! And draw the players */
    draw_maze(MAZE.X, MAZE.Y);
 
-   drawPlayer(&me);
+   drawPlayer(me);
 
 
    for (i = 0; (player + i)->sprite != NULL; ++i)
@@ -222,10 +203,11 @@ main(int argc, char *argv[])
             break;
          }
 
-         local_player_update(&me, player, SDL_GetKeyboardState(NULL));
+         local_player_update(me, player, SDL_GetKeyboardState(NULL));
       }
 
       SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+
 
       /*
        * Stop drawing things.

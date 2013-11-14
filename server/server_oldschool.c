@@ -81,6 +81,7 @@ main(argc, argv)
 		return 1;
 	}
 
+
 	/*
 	 * Bind socket to port. 
 	 */
@@ -100,6 +101,7 @@ main(argc, argv)
 		perror("Failed to listen to connections");
 		return 1;
 	}
+
 
 	/*
 	 * Accept connections, finally! 
@@ -135,6 +137,7 @@ main(argc, argv)
 		exit(1);
 	}
 
+
 	/*
 	 * Receive player name (32 byte string), then send player number. 
 	 */
@@ -142,6 +145,7 @@ main(argc, argv)
 	recv(csockfd, pname, 32, 0);
 	printf("%s connected!!!\n", pname);
 
+	/* this is testing */
 	pnum = 0;
 	sendall(csockfd, &pnum, sizeof(pnum));
 
@@ -164,6 +168,12 @@ main(argc, argv)
 
 		sendall(csockfd, pname, 32);
 	}
+
+	magic = htons(HUNTER);
+	sendall(csockfd, (char *) &magic, sizeof(magic));
+
+	pnum = random() % 12;
+	sendall(csockfd, &pnum, sizeof(pnum));
 
 	/*
 	 * Free things (sockets, addrinfo, player data, maze) and exit. 

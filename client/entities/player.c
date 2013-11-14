@@ -24,6 +24,9 @@ init_player(TCPsocket sock, PLAYER *player)
 
    player->name = pname;
 
+   /* default type is 0 */
+   player->type = 0;
+
 #ifdef _DEBUG
    printf("Got %s (%d)", pname, player->playerno);
 #endif
@@ -38,12 +41,12 @@ init_player(TCPsocket sock, PLAYER *player)
  * O(n)
  */
 PLAYER *
-playerAt(PLAYER *players, short x, short y)
+playerAt(PLAYER *players, short x, short y, PLAYER *me)
 {
    int i;
    for (i = 0; players[i].sprite != NULL; i++)
    {
-      if (players[i].x == x && players[i].y == y)
+      if (players[i].x == x && players[i].y == y && players + i != me)
       {
          return &players[i];
       }
@@ -90,7 +93,8 @@ local_player_update(PLAYER *me, PLAYER *remote, const Uint8 *kbdstate)
    }
 
    PLAYER *dunce;
-   if ((dunce = playerAt(remote, me->x, me->y)) != NULL)
+
+   if ((dunce = playerAt(remote, me->x, me->y, me)) != NULL)
    {
       /* Not a hunter */
       if (!me->type)

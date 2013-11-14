@@ -168,10 +168,6 @@ step()
    /*
     * Move anywhere but to an edge. Try to avoid moving to already visited
     * cells, but it's possible to move to visited cells???
-    *
-    * Found out through gdb: Somehow, if the loop ends without breaking,
-    * MAZE.X and MAZE.Y are set to the width and height, respectively. But
-    * why?
     */
 
    _considered_harmful:
