@@ -8,7 +8,7 @@
 #include <errno.h>
 #include "mot_maze.h"
 
-#define MOTSRV_ADDR     "10.0.0.2"
+#define MOTSRV_ADDR     "127.0.0.1"
 #define MOTSRV_PORT     "6666"
 #define BACKLOG         8
 

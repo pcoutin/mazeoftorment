@@ -1,3 +1,4 @@
+#include <SDL2/SDL_net.h>
 #include <SDL2/SDL.h>
 #include <string.h>
 #include "../common/inih/ini.h"
