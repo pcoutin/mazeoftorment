@@ -13,6 +13,8 @@
 #define MOTSRV_PORT     "6666"
 #define BACKLOG         8
 
+#define PNAMELEN        32
+
 #define MAZE_MAGIC      0x6D7A
 #define ADD_PLAYER      0x4E45
 #define HUNTER          0x4855
@@ -24,6 +26,7 @@
 #define SRV_BUSY        0xEEEE
 
 int mrand(int floor, int ceil);
+void handle_connecting_player(int newfd);
 
 void *
 get_in_addr(struct sockaddr *sa)
@@ -124,19 +127,18 @@ main(int argc, char *argv[])
       /*
        * If system thinks the socket is on use but it isn't, fix it...
        */
-      setsockopt( ssockfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int) );
+      setsockopt(ssockfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int));
 
       /*
        * Bind socket to port.
        */
-      if( bind( ssockfd, p->ai_addr, p->ai_addrlen) < 0 )
+      if (bind(ssockfd, p->ai_addr, p->ai_addrlen) < 0)
       {
          close(ssockfd);
          continue;
       }
 
       break;
-
    }
 
 
@@ -209,46 +211,23 @@ main(int argc, char *argv[])
             if (newfd == -1)
             {
                perror("accept");
+               continue;
             }
-            else
+
+            /* Add the new socket descriptor to master. */
+            FD_SET(newfd, &master);
+
+            if (newfd > fdmax) 
             {
-               /* Add the new socket descriptor to master. */
-               FD_SET(newfd, &master);
-
-               if (newfd > fdmax) 
-               {
-                  newfd = fdmax;
-               }
-               printf("selectserver: new connection from %s on socket %d\n",
-                        inet_ntop(caddr.ss_family,
-                        get_in_addr((struct sockaddr*)&caddr),
-                        remoteIP, INET6_ADDRSTRLEN), newfd );
-
-               /*
-                * When a player first connects, send maze magic, data
-                * width, size. Then send the maze itself.  Then await
-                * confirmation.
-                */
-
-               magic = htons(MAZE_MAGIC);
-               
-               sendall( newfd, (char * ) &magic, sizeof( magic ) );
-
-               u = htonl( MAZE.w );
-
-               sendall( newfd, (char *) &u, sizeof( u ) );
-
-               u = htonl( MAZE.size );
-               sendall( newfd, (char *) &u, sizeof( u ) );
-
-               sendall( newfd, MAZE.data, MAZE.size );
-
-               char PLAYANAME[32];
-
-               recv( newfd, &PLAYANAME, 32, 0 );
-
-               printf("%s connected !!!\n", PLAYANAME );
+               fdmax = newfd;
             }
+            printf("selectserver: new connection from %s on socket %d\n",
+                     inet_ntop(caddr.ss_family,
+                     get_in_addr((struct sockaddr*)&caddr),
+                     remoteIP, INET6_ADDRSTRLEN), newfd );
+
+            handle_connecting_player(newfd);
+
          }
          else
          {
@@ -267,27 +246,25 @@ main(int argc, char *argv[])
                }
                close(i);
                FD_CLR(i, &master);
+               continue;
             }
-            else
+
+            /* we got some data to read,son */
+
+            for (j = 0; j <= fdmax; j++)
             {
-               /* we got some data to read,son */
-
-               for (j = 0; j <= fdmax; j++)
+               if (FD_ISSET(j, &master))
                {
-                  if (FD_ISSET(j, &master))
-                  {
-                     /*
-                      * don't send it to server and the client
-                      * who sent the data
-                      */
+                  /*
+                   * don't send it to server and the client
+                   * who sent the data
+                   */
 
-                     if (j != ssockfd && j != i)
-                     {
-                        if (send(j, buf, nbytes, 0) == -1)
-                        {
-                           perror("send");
-                        }
-                     }
+                  if (j != ssockfd
+                        && j != i
+                        && send(j, buf, nbytes, 0) == -1)
+                  {
+                     perror("send");
                   }
                }
             }
@@ -305,4 +282,41 @@ main(int argc, char *argv[])
    free(MAZE.data);
 
    return 0;
+}
+
+/*
+ * Will probably have to pass a struct or array of players as an argument,
+ * or return a struct representing a player.
+ */
+void
+handle_connecting_player(int newfd)
+{
+   char *pname;
+   unsigned short magic;
+   unsigned int u;
+
+   /*
+    * When a player first connects, send maze magic, data width, size.
+    * Then send the maze itself.  Then await confirmation.
+    */
+
+   magic = htons(MAZE_MAGIC);
+
+   sendall(newfd, (char *) &magic, sizeof(magic));
+
+   u = htonl(MAZE.w);
+
+   sendall(newfd, (char *) &u, sizeof(u));
+
+   u = htonl(MAZE.size );
+   sendall(newfd, (char *) &u, sizeof(u));
+
+   sendall(newfd, MAZE.data, MAZE.size);
+
+   pname = malloc(PNAMELEN);
+
+   /* TODO: Write a recvall()? */
+   recv(newfd, pname, PNAMELEN, 0);
+
+   printf("%s connected !!!\n", pname);
 }
