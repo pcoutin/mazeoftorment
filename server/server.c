@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,20 +25,15 @@
 
 int mrand(int floor, int ceil);
 
-/*
- * Thanks to Brian Hall for Beej's Guide to Network Programming
- * This function is taken from the guide, and this function is under
- * public domain. This function was modified.
- */
-
-
-void *get_in_addr(struct sockaddr *sa)
+void *
+get_in_addr(struct sockaddr *sa)
 {
-     if (sa->sa_family == AF_INET) {
-            return &(((struct sockaddr_in*)sa)->sin_addr);
-              }
+   if (sa->sa_family == AF_INET)
+   {
+      return &(((struct sockaddr_in*)sa)->sin_addr);
+   }
 
-       return &(((struct sockaddr_in6*)sa)->sin6_addr);
+   return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
 
@@ -64,7 +60,6 @@ sendall(int s, char *buf, size_t len)
 }
 
 
-
 int
 main(int argc, char *argv[])
 {
@@ -76,37 +71,20 @@ main(int argc, char *argv[])
    socklen_t addr_size;
    size_t len, bytes_sent;
 
-   int i,j;
+   int i, j;
 
-   // For handling multiple clients using select()
+   /* For handling multiple clients using select() */
 
-   fd_set master;    // master file descriptor set
-                     // contains all descriptors
-                     
-   fd_set read_fds;  // file descriptor set that
-                     // contains only those descriptors
-                     // that have new readable data
-   
-   int fdmax;        // highest file descriptors( file descriptors are int)
-                     // in the master set
-
-   int newfd;        // when making a new file descriptor for new
-                     // incoming connection
-
-   char buf[256];    // buffer for client data
-
-   int nbytes;       // bytes of data recieved from client using recv
-
+   fd_set master;
+   fd_set read_fds;  /* File descriptors with readable data */
+   int fdmax;        /* Highest file descriptor in the master set */
+   int newfd;        /* File descriptor for handling incoming connections */
+   char buf[256];
+   int nbytes;
    char remoteIP[INET6_ADDRSTRLEN];
 
-   
-   // ACTUAL PROGRAM COMMENCES
-   
-
-   FD_ZERO(&master); // Empty the master set
-   FD_ZERO(&read_fds);  // Empty the readfds set
-
-
+   FD_ZERO(&master);    /* Empty the master set */
+   FD_ZERO(&read_fds);  /* Empty the readfds set */
 
    genmaze(20, 20);
    memset(&hints, 0, sizeof(hints));
@@ -134,44 +112,7 @@ main(int argc, char *argv[])
       return 7;
    }
 
-   /*
-    * If system thinks the socket is on use but it isn't, fix it...
-    */
-
-
-   i = 1;
-   
-   
-   //if (setsockopt(ssockfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) == -1)
-   //{
-   //   perror("setsockopt");
-   //   return 1;
-   //}
-
-
-   /*
-    * Bind socket to port.
-    */
-   
-   
-   /*
-    *
-      if (bind(ssockfd, srvinfo->ai_addr, srvinfo->ai_addrlen) == -1)
-      {
-         perror("Failed to bind to port");
-         return 1;
-      }
-
-
-      if (listen(ssockfd, BACKLOG) == -1)
-      {
-         perror("Failed to listen to connections");
-         return 1;
-      }
-   *
-   */
-
-   for( p = srvinfo; p != NULL; p = p->ai_next )
+   for (p = srvinfo; p != NULL; p = p->ai_next)
    {
       ssockfd = socket( p->ai_family, p->ai_socktype, p->ai_protocol);
 
@@ -180,8 +121,14 @@ main(int argc, char *argv[])
          continue;
       }
 
+      /*
+       * If system thinks the socket is on use but it isn't, fix it...
+       */
       setsockopt( ssockfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int) );
 
+      /*
+       * Bind socket to port.
+       */
       if( bind( ssockfd, p->ai_addr, p->ai_addrlen) < 0 )
       {
          close(ssockfd);
@@ -193,156 +140,152 @@ main(int argc, char *argv[])
    }
 
 
-   // if p reached NULL, it means we didn't bind at all
+   /*
+    * If p reached NULL, it means we didn't bind at all.
+    */
 
-   if( p == NULL )
+   if (p == NULL)
    {
       fprintf( stderr, "failed to bind ssockfd\n" );
       return 2;
    }
 
-   freeaddrinfo( srvinfo );  // don't need this linked list now
+   freeaddrinfo(srvinfo);
 
-   
+   /*
+    * Start listening on server socket descriptor.
+    */
 
-   // start listening on server socket descriptor
-
-
-   if( listen(ssockfd, BACKLOG ) == -1 )
+   if (listen(ssockfd, BACKLOG ) == -1)
    {
-      perror("server can't listen" );
+      perror("Server can't listen.");
       return 3;
    }
 
-   // add ssockfd to master set of sockets
+   /*
+    * Add ssockfd to master set of sockets.
+    */
+   FD_SET(ssockfd, &master);
 
-   FD_SET( ssockfd, &master );
-
-   // since ssockfd is currently the only socket in master,
-   // it's the highest descriptor
-
+   /*
+    * Since ssockfd is currently the only socket in master,
+    * it's the highest descriptor.
+    */
    fdmax = ssockfd;
 
 
-   while( 1 )
+   while (1)
    {
-      read_fds = master;   // copy master to read_fds
+      read_fds = master;
 
-      if( select( fdmax + 1, &read_fds, NULL, NULL, NULL ) == -1 )
+      if (select(fdmax + 1, &read_fds, NULL, NULL, NULL ) == -1)
       {
          perror("select");
          return 4;
       }
 
-      // Now read_fds has only those sockets that
-      // have readable data to show
+      /*
+       * Now read_fds has only those sockets that have readable data to
+       * show.
+       * Run through all the sockets to find data to read.
+       */
 
-      // run through all the sockets to find data to read
-
-      for( i = 0; i <= fdmax; i++ )
+      for (i = 0; i <= fdmax; i++)
       {
-         if( FD_ISSET( i, &read_fds ) )
+         if (!FD_ISSET(i, &read_fds))
          {
-            // If we're here, i has data to show
+            continue;
+         }
 
-            if( i == ssockfd )
+         /* If we're here, i has data to show */
+         if (i == ssockfd)
+         {
+            /* Handle new connections. */
+
+            addr_size = sizeof caddr;
+            newfd = accept(ssockfd,
+                  (struct sockaddr *) &caddr, &addr_size);
+
+            if (newfd == -1)
             {
-               // handle new connections
-
-               addr_size = sizeof caddr;
-               newfd = accept( ssockfd, 
-                     ( struct sockaddr *) &caddr, &addr_size );
-
-               if( newfd == -1 )
-               {
-                  perror("accept");
-               }
-               else
-               {
-                  FD_SET( newfd, &master ); // add the new socket descriptor
-                                            // to master
-
-                  if( newfd > fdmax ) 
-                  {
-                     newfd = fdmax;
-                  }
-                  printf(" selectserver: new connection from %s on socket %d\n",
-                           inet_ntop(caddr.ss_family,
-                           get_in_addr((struct sockaddr*)&caddr),
-                           remoteIP, INET6_ADDRSTRLEN), newfd );
-
-                  /*
-                   * When a player first connects, send maze magic,
-                   * data width, size. Then send the maze itself.
-                   * Then await confirmation.
-                   *
-                   */
-
-                  magic = htons(MAZE_MAGIC);
-                  
-                  sendall( newfd, (char * ) &magic, sizeof( magic ) );
-
-                  u = htonl( MAZE.w );
-
-                  sendall( newfd, (char *) &u, sizeof( u ) );
-
-                  u = htonl( MAZE.size );
-                  sendall( newfd, (char *) &u, sizeof( u ) );
-
-                  sendall( newfd, MAZE.data, MAZE.size );
-
-                  char PLAYANAME[32];
-
-                  recv( newfd, &PLAYANAME, 32, 0 );
-
-                  printf("%s connected !!!\n", PLAYANAME );
-
-   
-               }
-
+               perror("accept");
             }
-
             else
             {
+               /* Add the new socket descriptor to master. */
+               FD_SET(newfd, &master);
 
-               // handle data from a client
-
-               if( (nbytes = recv(i, buf, sizeof buf, 0 )) <= 0 )
+               if (newfd > fdmax) 
                {
+                  newfd = fdmax;
+               }
+               printf("selectserver: new connection from %s on socket %d\n",
+                        inet_ntop(caddr.ss_family,
+                        get_in_addr((struct sockaddr*)&caddr),
+                        remoteIP, INET6_ADDRSTRLEN), newfd );
 
-                  // we either have an error or the client closed connection
+               /*
+                * When a player first connects, send maze magic, data
+                * width, size. Then send the maze itself.  Then await
+                * confirmation.
+                */
 
-                  if( nbytes == 0 )
-                  {
-                     // client closed connection
+               magic = htons(MAZE_MAGIC);
+               
+               sendall( newfd, (char * ) &magic, sizeof( magic ) );
 
-                     printf(" selectserver: socket %d hung up\n", i );
+               u = htonl( MAZE.w );
 
-                  }
-                  else
-                  {
-                     perror("recv");
-                  }
-                  close(i); // don't need it now
-                  FD_CLR(i, &master);
+               sendall( newfd, (char *) &u, sizeof( u ) );
+
+               u = htonl( MAZE.size );
+               sendall( newfd, (char *) &u, sizeof( u ) );
+
+               sendall( newfd, MAZE.data, MAZE.size );
+
+               char PLAYANAME[32];
+
+               recv( newfd, &PLAYANAME, 32, 0 );
+
+               printf("%s connected !!!\n", PLAYANAME );
+            }
+         }
+         else
+         {
+            /* Handle data from a client. */
+
+            if ((nbytes = recv(i, buf, sizeof buf, 0 )) <= 0)
+            {
+               if (nbytes == 0)
+               {
+                  /* Client closed connection. */
+                  printf("selectserver: socket %d hung up\n", i);
                }
                else
                {
-                  // we got some data to read,son
+                  perror("recv");
+               }
+               close(i);
+               FD_CLR(i, &master);
+            }
+            else
+            {
+               /* we got some data to read,son */
 
-                  for( j = 0; j <= fdmax; j++ )
+               for (j = 0; j <= fdmax; j++)
+               {
+                  if (FD_ISSET(j, &master))
                   {
-                     if( FD_ISSET( j, &master ) )
-                     {
-                        // don't send it to server and the client
-                        // who sent the data
+                     /*
+                      * don't send it to server and the client
+                      * who sent the data
+                      */
 
-                        if( j != ssockfd && j != i )
+                     if (j != ssockfd && j != i)
+                     {
+                        if (send(j, buf, nbytes, 0) == -1)
                         {
-                           if( send( j, buf, nbytes, 0 ) == -1 )
-                           {
-                              perror("send");
-                           }
+                           perror("send");
                         }
                      }
                   }
