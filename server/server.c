@@ -29,6 +29,18 @@ int mrand(int floor, int ceil);
  * This function is taken from the guide, and this function is under
  * public domain. This function was modified.
  */
+
+
+void *get_in_addr(struct sockaddr *sa)
+{
+     if (sa->sa_family == AF_INET) {
+            return &(((struct sockaddr_in*)sa)->sin_addr);
+              }
+
+       return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
+
 void
 sendall(int s, char *buf, size_t len)
 {
@@ -108,23 +120,18 @@ main(int argc, char *argv[])
    if (err = getaddrinfo(MOTSRV_ADDR, MOTSRV_PORT, &hints, &srvinfo))
    {
       fprintf(stderr, "Failed to get address: ", gai_strerror(err));
-      return 1;
+      return 10;
    }
 
    /*
     * Allocate socket file descriptor with address information acquired
     * from getaddrinfo.
     */
-   ssockfd = socket(
-         srvinfo->ai_family,
-         srvinfo->ai_socktype,
-         srvinfo->ai_protocol
-         );
 
    if (ssockfd == -1)
    {
       perror("Failed to allocate server socket descriptor.");
-      return 1;
+      return 7;
    }
 
    /*
@@ -168,7 +175,7 @@ main(int argc, char *argv[])
    {
       ssockfd = socket( p->ai_family, p->ai_socktype, p->ai_protocol);
 
-      if( ssockfd > 0 )
+      if( ssockfd < 0 )
       {
          continue;
       }
