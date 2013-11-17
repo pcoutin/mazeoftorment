@@ -121,6 +121,9 @@ filledcell_check(unsigned int x, unsigned int y)
    return ret;
 }
 
+/*
+ * Range [floor, ceil)?
+ */
 int
 mrand(int floor, int ceil)
 {

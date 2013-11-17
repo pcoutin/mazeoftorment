@@ -137,7 +137,6 @@ main(argc, argv)
 		exit(1);
 	}
 
-
 	/*
 	 * Receive player name (32 byte string), then send player number. 
 	 */

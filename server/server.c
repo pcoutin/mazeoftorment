@@ -292,6 +292,7 @@ void
 handle_connecting_player(int newfd)
 {
    char *pname;
+   unsigned char pnum;
    unsigned short magic;
    unsigned int u;
 
@@ -301,22 +302,57 @@ handle_connecting_player(int newfd)
     */
 
    magic = htons(MAZE_MAGIC);
-
    sendall(newfd, (char *) &magic, sizeof(magic));
 
+   /* Maze width */
    u = htonl(MAZE.w);
-
    sendall(newfd, (char *) &u, sizeof(u));
 
-   u = htonl(MAZE.size );
+   u = htonl(MAZE.size);
    sendall(newfd, (char *) &u, sizeof(u));
 
    sendall(newfd, MAZE.data, MAZE.size);
 
+   if (recv(newfd, &magic, sizeof(magic), 0) != sizeof(magic)
+         || ntohs(magic) != MAZE_MAGIC)
+   {
+      fprintf(stderr, "Failed to get client confirmation\n");
+      exit(1);
+   }
+
+   /* Receive player name. TODO: Write a recvall()? */
    pname = malloc(PNAMELEN);
-
-   /* TODO: Write a recvall()? */
    recv(newfd, pname, PNAMELEN, 0);
-
    printf("%s connected !!!\n", pname);
+
+   /* this is testing */
+   pnum = 0;
+   sendall(newfd, &pnum, sizeof(pnum));
+
+   /*
+    * Add a few players scattered across the maze, then pick one as the
+    * predator... 
+    */
+   for (pnum = 0; pnum < 12; pnum++)
+   {
+      /* player no */
+      magic = htons(ADD_PLAYER);
+      sendall(newfd, (char *) &magic, sizeof(magic));
+      sendall(newfd, &pnum, sizeof(pnum));
+
+      /* x and y, there can be collisions but who cares?????? */
+      magic = htons(mrand(0, 19) * 2);
+      sendall(newfd, (char *) &magic, sizeof(magic));
+
+      magic = htons(mrand(0, 19) * 2);
+      sendall(newfd, (char *) &magic, sizeof(magic));
+
+      sendall(newfd, pname, 32);
+   }
+
+   magic = htons(HUNTER);
+   sendall(newfd, (char *) &magic, sizeof(magic));
+
+   pnum = mrand(0, 11);
+   sendall(newfd, &pnum, sizeof(pnum));
 }
