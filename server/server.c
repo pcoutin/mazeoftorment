@@ -49,18 +49,52 @@ sendall(int s, char *buf, size_t len)
       total += n;
       bytesleft -= n;
    }
-} 
+}
+
+
 
 int
 main(int argc, char *argv[])
 {
-   int ssockfd, csockfd, err, i;
+   int ssockfd, csockfd, err;;
    unsigned short magic;
    unsigned int u;
-   struct addrinfo hints, *srvinfo;
+   struct addrinfo hints, *srvinfo, *p;
    struct sockaddr_storage caddr;
    socklen_t addr_size;
    size_t len, bytes_sent;
+
+   int i,j;
+
+   // For handling multiple clients using select()
+
+   fd_set master;    // master file descriptor set
+                     // contains all descriptors
+                     
+   fd_set read_fds;  // file descriptor set that
+                     // contains only those descriptors
+                     // that have new readable data
+   
+   int fdmax;        // highest file descriptors( file descriptors are int)
+                     // in the master set
+
+   int newfd;        // when making a new file descriptor for new
+                     // incoming connection
+
+   char buf[256];    // buffer for client data
+
+   int nbytes;       // bytes of data recieved from client using recv
+
+   char remoteIP[INET6_ADDRSTRLEN];
+
+   
+   // ACTUAL PROGRAM COMMENCES
+   
+
+   FD_ZERO(&master); // Empty the master set
+   FD_ZERO(&read_fds);  // Empty the readfds set
+
+
 
    genmaze(20, 20);
    memset(&hints, 0, sizeof(hints));
@@ -89,101 +123,229 @@ main(int argc, char *argv[])
 
    if (ssockfd == -1)
    {
-      perror("Failed to allocate socket descriptor.");
+      perror("Failed to allocate server socket descriptor.");
       return 1;
    }
 
    /*
     * If system thinks the socket is on use but it isn't, fix it...
     */
+
+
    i = 1;
-   if (setsockopt(ssockfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) == -1)
-   {
-      perror("setsockopt");
-      return 1;
-   }
+   
+   
+   //if (setsockopt(ssockfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) == -1)
+   //{
+   //   perror("setsockopt");
+   //   return 1;
+   //}
 
 
    /*
     * Bind socket to port.
     */
-   if (bind(ssockfd, srvinfo->ai_addr, srvinfo->ai_addrlen) == -1)
-   {
-      perror("Failed to bind to port");
-      return 1;
-   }
-
-   if (listen(ssockfd, BACKLOG) == -1)
-   {
-      perror("Failed to listen to connections");
-      return 1;
-   }
-
+   
+   
    /*
-    * Accept connections, finally!
-    */
-   addr_size = sizeof(caddr);
-   csockfd = accept(ssockfd, (struct sockaddr *) &caddr, &addr_size);
+    *
+      if (bind(ssockfd, srvinfo->ai_addr, srvinfo->ai_addrlen) == -1)
+      {
+         perror("Failed to bind to port");
+         return 1;
+      }
 
-   if (csockfd == -1)
+
+      if (listen(ssockfd, BACKLOG) == -1)
+      {
+         perror("Failed to listen to connections");
+         return 1;
+      }
+   *
+   */
+
+   for( p = srvinfo; p != NULL; p = p->ai_next )
    {
-      perror("Cannot accept connections");
-      return 1;
+      ssockfd = socket( p->ai_family, p->ai_socktype, p->ai_protocol);
+
+      if( ssockfd > 0 )
+      {
+         continue;
+      }
+
+      setsockopt( ssockfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int) );
+
+      if( bind( ssockfd, p->ai_addr, p->ai_addrlen) < 0 )
+      {
+         close(ssockfd);
+         continue;
+      }
+
+      break;
+
    }
 
-   /*
-    * When a player first connects, send maze magic, data width, size.
-    * Then send the maze itself. Then await confirmation.
-    */
-   magic = htons(MAZE_MAGIC);
-   sendall(csockfd, (char *) &magic, sizeof(magic));
 
-   u = htonl(MAZE.w);
-   sendall(csockfd, (char *) &u, sizeof(u));
+   // if p reached NULL, it means we didn't bind at all
 
-   u = htonl(MAZE.size);
-   sendall(csockfd, (char *) &u, sizeof(u));
-
-   sendall(csockfd, MAZE.data, MAZE.size);
-
-   if (recv(csockfd, &magic, sizeof(magic), 0) != sizeof(magic) ||
-         ntohs(magic) != MAZE_MAGIC)
+   if( p == NULL )
    {
-      fprintf(stderr, "Failed to get client confirmation\n");
-      exit(EXIT_FAILURE);
+      fprintf( stderr, "failed to bind ssockfd\n" );
+      return 2;
    }
 
-   /*
-    * Receive player name (32 byte string), then send player number.
-    */
-   char PLAYANAME[32];
-   recv(csockfd, &PLAYANAME, 32, 0);
-   printf("%s connected!!!\n", PLAYANAME);
+   freeaddrinfo( srvinfo );  // don't need this linked list now
 
-   unsigned char pnum = 0;
-   sendall(csockfd, &pnum, sizeof(pnum));
+   
 
-   /*
-    * Add a few players scattered across the maze, then pick one as the
-    * predator...
-    */
-   for (pnum = 0; pnum < 12; pnum++)
+   // start listening on server socket descriptor
+
+
+   if( listen(ssockfd, BACKLOG ) == -1 )
    {
-      /* player no */
-      magic = htons(ADD_PLAYER);
-      sendall(csockfd, (char *) &magic, sizeof(magic));
-      sendall(csockfd, &pnum, sizeof(pnum));
-
-      /* x and y, there can be collisions but who cares?????? */
-      magic = htons(mrand(0, 19) * 2);
-      sendall(csockfd, (char *) &magic, sizeof(magic));
-
-      magic = htons(mrand(0, 19) * 2);
-      sendall(csockfd, (char *) &magic, sizeof(magic));
-
-      sendall(csockfd, PLAYANAME, 32);
+      perror("server can't listen" );
+      return 3;
    }
 
+   // add ssockfd to master set of sockets
+
+   FD_SET( ssockfd, &master );
+
+   // since ssockfd is currently the only socket in master,
+   // it's the highest descriptor
+
+   fdmax = ssockfd;
+
+
+   while( 1 )
+   {
+      read_fds = master;   // copy master to read_fds
+
+      if( select( fdmax + 1, &read_fds, NULL, NULL, NULL ) == -1 )
+      {
+         perror("select");
+         return 4;
+      }
+
+      // Now read_fds has only those sockets that
+      // have readable data to show
+
+      // run through all the sockets to find data to read
+
+      for( i = 0; i <= fdmax; i++ )
+      {
+         if( FD_ISSET( i, &read_fds ) )
+         {
+            // If we're here, i has data to show
+
+            if( i == ssockfd )
+            {
+               // handle new connections
+
+               addr_size = sizeof caddr;
+               newfd = accept( ssockfd, 
+                     ( struct sockaddr *) &caddr, &addr_size );
+
+               if( newfd == -1 )
+               {
+                  perror("accept");
+               }
+               else
+               {
+                  FD_SET( newfd, &master ); // add the new socket descriptor
+                                            // to master
+
+                  if( newfd > fdmax ) 
+                  {
+                     newfd = fdmax;
+                  }
+                  printf(" selectserver: new connection from %s on socket %d\n",
+                           inet_ntop(caddr.ss_family,
+                           get_in_addr((struct sockaddr*)&caddr),
+                           remoteIP, INET6_ADDRSTRLEN), newfd );
+
+                  /*
+                   * When a player first connects, send maze magic,
+                   * data width, size. Then send the maze itself.
+                   * Then await confirmation.
+                   *
+                   */
+
+                  magic = htons(MAZE_MAGIC);
+                  
+                  sendall( newfd, (char * ) &magic, sizeof( magic ) );
+
+                  u = htonl( MAZE.w );
+
+                  sendall( newfd, (char *) &u, sizeof( u ) );
+
+                  u = htonl( MAZE.size );
+                  sendall( newfd, (char *) &u, sizeof( u ) );
+
+                  sendall( newfd, MAZE.data, MAZE.size );
+
+                  char PLAYANAME[32];
+
+                  recv( newfd, &PLAYANAME, 32, 0 );
+
+                  printf("%s connected !!!\n", PLAYANAME );
+
+   
+               }
+
+            }
+
+            else
+            {
+
+               // handle data from a client
+
+               if( (nbytes = recv(i, buf, sizeof buf, 0 )) <= 0 )
+               {
+
+                  // we either have an error or the client closed connection
+
+                  if( nbytes == 0 )
+                  {
+                     // client closed connection
+
+                     printf(" selectserver: socket %d hung up\n", i );
+
+                  }
+                  else
+                  {
+                     perror("recv");
+                  }
+                  close(i); // don't need it now
+                  FD_CLR(i, &master);
+               }
+               else
+               {
+                  // we got some data to read,son
+
+                  for( j = 0; j <= fdmax; j++ )
+                  {
+                     if( FD_ISSET( j, &master ) )
+                     {
+                        // don't send it to server and the client
+                        // who sent the data
+
+                        if( j != ssockfd && j != i )
+                        {
+                           if( send( j, buf, nbytes, 0 ) == -1 )
+                           {
+                              perror("send");
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+
+            
    /*
     * Free things (sockets, addrinfo, player data, maze) and exit.
     */
