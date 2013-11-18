@@ -77,9 +77,6 @@ parsecfg(CLC_CONFIG *config)
     * Attempt to parse config file.
     */
 
-   // is cfg_handler a function or what,
-   // no arguments passed to it in the switch
-
    switch (ini_parse(CFG_FNAME, cfg_handler, config))
    {
       case 0:
