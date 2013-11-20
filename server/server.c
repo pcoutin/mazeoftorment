@@ -72,7 +72,7 @@ recvall(int s, char *buf, size_t len)
 
    while (total < len)
    {
-      if (n = recv(s, buf, bytesleft, 0) == -1)
+      if ((n = recv(s, buf, bytesleft, 0)) == -1)
       {
          perror("recvall");
          exit(EXIT_FAILURE);
