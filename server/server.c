@@ -63,6 +63,35 @@ sendall(int s, char *buf, size_t len)
 }
 
 
+void
+recvall(int s, char *buf, size_t len)
+{
+   int total = 0;
+   int bytesleft = len;
+   int n;
+
+   while (total < len)
+   {
+      if (n = recv(s, buf, bytesleft, 0) == -1)
+      {
+         perror("recvall");
+         exit(EXIT_FAILURE);
+      }
+      total += n;
+      bytesleft -= n;
+   }
+}
+
+
+short
+getshort(int sock)
+{
+   short ret;
+   recvall(sock, (char *) &ret, sizeof(short));
+   return ntohs(ret);
+}
+
+
 int
 main(int argc, char *argv[])
 {
@@ -231,9 +260,9 @@ main(int argc, char *argv[])
          }
          else
          {
-            /* Handle data from a client. */
+            /* Handle data from a client. (ONLY A SHORT/magic no) */
 
-            if ((nbytes = recv(i, buf, sizeof buf, 0 )) <= 0)
+            if ((nbytes = recv(i, &magic, sizeof magic, 0 )) <= 0)
             {
                if (nbytes == 0)
                {
@@ -275,14 +304,13 @@ main(int argc, char *argv[])
 	     * level functions to receive ints and stuff. I guess.
 	     */
 
-	    magic = ntohs(* (unsigned short *) buf);
-
-	    switch (magic)
+	    switch (htons(magic))
 	    {
-	       case PLAYER_MOV:
-		  x = ntohs(* (short *) (buf + 2));
-		  y = ntohs(* (short *) (buf + 4));
-		  printf("player with socket %d moved to %d, %d\n", i, x, y);
+            case PLAYER_MOV:
+               x = getshort(i);
+               y = getshort(i);
+               printf("player with socket %d moved to %d, %d\n", i, x, y);
+               break;
 	    }
          }
       }
