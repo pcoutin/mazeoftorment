@@ -61,7 +61,8 @@ playerAt(PLAYER *players, short x, short y, PLAYER *me)
  * i mean what
  */
 void
-local_player_update(PLAYER *me, PLAYER *remote, const Uint8 *kbdstate)
+local_player_update(TCPsocket sock, PLAYER *me, PLAYER *remote,
+      const Uint8 *kbdstate)
 {
    short myx = me->x,
          myy = me->y;
@@ -112,6 +113,10 @@ local_player_update(PLAYER *me, PLAYER *remote, const Uint8 *kbdstate)
          dunce->y = -5;
       }
    }
+
+   sendshort(sock, PLAYER_MOV);
+   sendshort(me->x);
+   sendshort(me->y);
 
    drawPlayer(me);
 }

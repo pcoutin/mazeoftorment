@@ -27,7 +27,7 @@ void init_player(TCPsocket sock, PLAYER *player);
 
 void drawPlayer(PLAYER *);
 
-void local_player_update(PLAYER *, PLAYER *, const Uint8 *);
+void local_player_update(TCPsocket sock, PLAYER *, PLAYER *, const Uint8 *);
 
 void clearPlayer(PLAYER *);
 

@@ -221,7 +221,7 @@ main(int argc, char *argv[])
             {
                fdmax = newfd;
             }
-            printf("selectserver: new connection from %s on socket %d\n",
+            printf("server: new connection from %s on socket %d\n",
                      inet_ntop(caddr.ss_family,
                      get_in_addr((struct sockaddr*)&caddr),
                      remoteIP, INET6_ADDRSTRLEN), newfd );
@@ -238,7 +238,7 @@ main(int argc, char *argv[])
                if (nbytes == 0)
                {
                   /* Client closed connection. */
-                  printf("selectserver: socket %d hung up\n", i);
+                  printf("server: socket %d hung up\n", i);
                }
                else
                {

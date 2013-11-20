@@ -18,4 +18,6 @@ Uint16 getshort(TCPsocket sock);
 Uint32 getint(TCPsocket sock);
 void getmaze(TCPsocket sock);
 
+void sendshort(TCPsocker sock, Uint16 i);
+
 #endif

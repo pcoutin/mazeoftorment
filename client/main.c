@@ -1,5 +1,5 @@
 /*
- * Simple client for the Maze of Torment game.
+ * Client for the Maze of Torment game.
  */
 
 #include <stdio.h>
@@ -185,6 +185,21 @@ main(int argc, char *argv[])
       /*
        * Poll the network
        */
+      if (SDLNet_SocketReady(srv_sock))
+      {
+         switch(getshort(srv_sock))
+         {
+         case PLAYER_MOV:
+            puts("PLAYER_MOV");
+            break;
+         case PLAYER_WIN:
+            puts("PLAYER_WIN");
+            break;
+         case PLAYER_DC:
+            puts("PLAYER_DC");
+            break;
+         }
+      }
 
       /*
        * Poll for keys
@@ -203,7 +218,7 @@ main(int argc, char *argv[])
             break;
          }
 
-         local_player_update(me, player, SDL_GetKeyboardState(NULL));
+         local_player_update(srv_sock, me, player, SDL_GetKeyboardState(NULL));
       }
 
       SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
