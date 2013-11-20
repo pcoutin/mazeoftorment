@@ -25,6 +25,11 @@
 #define PLAYER_WIN      0x5749
 #define SRV_BUSY        0xEEEE
 
+/*
+ * TODO: linked list for player list?
+ * Somehow directly associate each fd with a struct representing a player.
+ */
+
 int mrand(int floor, int ceil);
 void handle_connecting_player(int newfd);
 
