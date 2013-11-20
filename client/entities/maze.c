@@ -48,7 +48,6 @@ draw_mazetile(unsigned char tile, int x, int y)
             y + TILE_HEIGHT/2
       );
    }
-
 }
 
 void
@@ -63,6 +62,15 @@ draw_maze(int x, int y)
             x + (i % MAZE.w) * TILE_WIDTH,
             y + (i / MAZE.w) * TILE_HEIGHT
       );
+
+      if (*(MAZE.data + i) &&
+            !(*(MAZE.data + i) & N_WALL) &&
+            !(*(MAZE.data + i) & W_WALL) &&
+            !(*(MAZE.data + i) & E_WALL) &&
+            !(*(MAZE.data + i) & S_WALL))
+      {
+         *(MAZE.data + i) = 0;
+      }
    }
 
    /*
