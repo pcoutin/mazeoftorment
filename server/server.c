@@ -67,7 +67,7 @@ int
 main(int argc, char *argv[])
 {
    int ssockfd, csockfd, err;;
-   unsigned short magic;
+   unsigned short magic, x, y;
    unsigned int u;
    struct addrinfo hints, *srvinfo, *p;
    struct sockaddr_storage caddr;
@@ -268,6 +268,22 @@ main(int argc, char *argv[])
                   }
                }
             }
+	    printf("got packet\n");
+
+	    /*
+	     * TODO: Clean this up, it's really ugly! Make higher
+	     * level functions to receive ints and stuff. I guess.
+	     */
+
+	    magic = ntohs(* (unsigned short *) buf);
+
+	    switch (magic)
+	    {
+	       case PLAYER_MOV:
+		  x = ntohs(* (short *) (buf + 2));
+		  y = ntohs(* (short *) (buf + 4));
+		  printf("player with socket %d moved to %d, %d\n", i, x, y);
+	    }
          }
       }
    }

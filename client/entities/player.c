@@ -115,8 +115,8 @@ local_player_update(TCPsocket sock, PLAYER *me, PLAYER *remote,
    }
 
    sendshort(sock, PLAYER_MOV);
-   sendshort(me->x);
-   sendshort(me->y);
+   sendshort(sock, me->x);
+   sendshort(sock, me->y);
 
    drawPlayer(me);
 }
