@@ -25,11 +25,6 @@
 #define PLAYER_WIN      0x5749
 #define SRV_BUSY        0xEEEE
 
-/*
- * TODO: linked list for player list?
- * Somehow directly associate each fd with a struct representing a player.
- */
-
 int mrand(int floor, int ceil);
 void handle_connecting_player(int newfd);
 
@@ -45,7 +40,7 @@ get_in_addr(struct sockaddr *sa)
 }
 
 
-void
+size_t
 sendall(int s, char *buf, size_t len)
 {
    int total = 0;          // how many bytes we've sent
@@ -59,16 +54,17 @@ sendall(int s, char *buf, size_t len)
       if (n == -1)
       {
          perror("sendall");
-         exit(EXIT_FAILURE);
+         return total;
       }
 
       total += n;
       bytesleft -= n;
    }
+   return total;
 }
 
 
-void
+size_t
 recvall(int s, char *buf, size_t len)
 {
    int total = 0;
@@ -80,11 +76,12 @@ recvall(int s, char *buf, size_t len)
       if ((n = recv(s, buf, bytesleft, 0)) == -1)
       {
          perror("recvall");
-         exit(EXIT_FAILURE);
+         return total;
       }
       total += n;
       bytesleft -= n;
    }
+   return total;
 }
 
 
@@ -96,6 +93,12 @@ getshort(int sock)
    return ntohs(ret);
 }
 
+size_t
+sendshort(int sock, short s)
+{
+   s = htons(s);
+   return send(sock, &s, sizeof(s), 0);
+}
 
 int
 main(int argc, char *argv[])
@@ -109,6 +112,9 @@ main(int argc, char *argv[])
    size_t len, bytes_sent;
 
    int i, j;
+
+   /* Array's element of index pnum should be an fd */
+   int players[];
 
    /* For handling multiple clients using select() */
 
@@ -283,6 +289,15 @@ main(int argc, char *argv[])
                continue;
             }
 
+	    switch (htons(magic))
+	    {
+            case PLAYER_MOV:
+               x = getshort(i);
+               y = getshort(i);
+               printf("player with socket %d moved to %d, %d\n", i, x, y);
+               break;
+	    }
+
             /* we got some data to read,son */
 
             for (j = 0; j <= fdmax; j++)
@@ -300,23 +315,10 @@ main(int argc, char *argv[])
                   {
                      perror("send");
                   }
+
                }
             }
-	    printf("got packet\n");
 
-	    /*
-	     * TODO: Clean this up, it's really ugly! Make higher
-	     * level functions to receive ints and stuff. I guess.
-	     */
-
-	    switch (htons(magic))
-	    {
-            case PLAYER_MOV:
-               x = getshort(i);
-               y = getshort(i);
-               printf("player with socket %d moved to %d, %d\n", i, x, y);
-               break;
-	    }
          }
       }
    }
@@ -369,9 +371,8 @@ handle_connecting_player(int newfd)
       exit(1);
    }
 
-   /* Receive player name. TODO: Write a recvall()? */
    pname = malloc(PNAMELEN);
-   recv(newfd, pname, PNAMELEN, 0);
+   recvall(newfd, pname, PNAMELEN);
    printf("%s connected !!!\n", pname);
 
    /* this is testing */
