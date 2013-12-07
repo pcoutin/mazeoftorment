@@ -55,7 +55,7 @@ Choose hunter (which means the game begins)
 Player updates
 ==============
 
-from other players to the client:
+from server - other players to the client:
 
 A player MOVES on the maze
 * PLAYER_MOV

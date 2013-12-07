@@ -36,8 +36,6 @@ struct
 
 #define MTILE(x, y) *(MAZE.data + x + y * MAZE.h)
 
-#ifdef _MOT_SERVER
 void genmaze(unsigned int width, unsigned int height);
-#endif
 
 #endif

@@ -286,7 +286,7 @@ edgecheck(unsigned char *c)
  *
  * Lone wall: just remove it
  */
-void
+static unsigned char
 setintersect_type(unsigned char *curr)
 {
    unsigned char ret = 0, ec = edgecheck(curr);
@@ -422,7 +422,7 @@ main(int argc, char *argv[])
 
    genmaze(w, h);
 
-   printf("maze is %ld bytes long.\n", MAZE.size);
+   printf("maze is %d bytes long.\n", MAZE.size);
 
    print_maze_old();
    putchar('\n');
