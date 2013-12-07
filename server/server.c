@@ -8,6 +8,7 @@
 #include <netdb.h>
 #include <errno.h>
 #include <unistd.h>
+#include <time.h>
 #include "../common/mot_maze.h"
 #include "server.h"
 
@@ -107,6 +108,14 @@ main(int argc, char *argv[])
     char buf[256];
     int nbytes;
     char remoteIP[INET6_ADDRSTRLEN];
+
+    int players_connected = 0;
+    time_t launchtime = 0;
+    unsigned char game_started = 0;
+
+    /* Should be moved to config file/cli arg ALONG WITH hostname/port */
+    int min_players = 2;
+    time_t time_thresh = 60;
 
     FD_ZERO(&master);    /* Empty the master set */
     FD_ZERO(&read_fds);  /* Empty the readfds set */
@@ -249,7 +258,23 @@ main(int argc, char *argv[])
                             get_in_addr((struct sockaddr*)&caddr),
                             remoteIP, INET6_ADDRSTRLEN), newfd );
 
+                if (game_started)
+                {
+                    magic = htons(SRV_BUST);
+                    close(newfd);
+                    continue;
+                }
+
+                if (!launchtime) launchtime = time(NULL);
+                players_connected++;
                 handle_connecting_player(newfd, pset);
+
+                if (time(NULL) - launchtime >= time_thresh &&
+                        players_connected >= min_players)
+                {
+                    begin_game(pset);
+                    game_started = 1;
+                }
             }
             else
             {
@@ -278,6 +303,10 @@ main(int argc, char *argv[])
                         y = getshort(i);
                         printf("player with socket %d moved to %d, %d\n",
                                 i, x, y);
+                        /*
+                         * now send it to everyone. non blocking TCP?
+                         * broadcast function?
+                         */
                         break;
                 }
 
@@ -361,6 +390,11 @@ handle_connecting_player(int newfd, Player_set *pset)
     pset->last->x = 42;
     pset->last->y = 42;
     pset->last->fd = newfd;
+}
+
+void
+begin_game(Player_set *pset)
+{
 }
 
 /* add a bunch
