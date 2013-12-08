@@ -403,6 +403,29 @@ handle_connecting_player(int newfd, Player_set *pset)
 void
 begin_game(Player_set *pset)
 {
+   unsigned short magic;
+   int i;
+   int hpno = mrand(0,11);
+   
+   for(i=0; (pset)->last_pno; ++i)
+   {
+      Player *cur = (pset->first) + i;
+     
+      magic = htons(ADD_PLAYER);
+      sendall( cur->fd, (char *) &magic, sizeof(magic));
+      sendall( cur->fd, (char *) cur->playerno, sizeof(cur->playerno));
+      magic = htons(mrand(0,19) * 2);
+      sendall( cur->fd, (char *) &magic, sizeof(magic));
+      magic = htons(mrand(0,19) * 2);
+      sendall( cur->fd, (char *) &magic, sizeof(magic));
+      sendall( cur->fd, cur->name, sizeof(cur->name));
+
+      // hunter
+      magic = htons(HUNTER);
+      sendall( cur->fd, (char *) &magic, sizeof(magic));
+
+      sendall( cur->fd, (char *) &hpno, sizeof(hpno));
+   }
 }
 
 /* add a bunch
