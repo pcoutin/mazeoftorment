@@ -13,6 +13,12 @@
 #include "server.h"
 
 
+void
+begin_game(Player_set *pset);
+
+int
+sendMov( int psock, short int movepno, int x, int y );
+
 void *
 get_in_addr(struct sockaddr *sa)
 {
@@ -260,7 +266,7 @@ main(int argc, char *argv[])
 
                 if (game_started)
                 {
-                    magic = htons(SRV_BUST);
+                    magic = htons(SRV_BUSY);
                     close(newfd);
                     continue;
                 }
@@ -321,9 +327,11 @@ main(int argc, char *argv[])
                          * who sent the data
                          */
 
+                       Player *justMoved = player_byfd(pset,i);
+                       int movPnum = justMoved->playerno;
                         if (j != ssockfd
                                 && j != i
-                                && send(j, buf, nbytes, 0) == -1)
+                                && sendMov(j,movPnum,x,y) == -1)
                         {
                             perror("send");
                         }
@@ -419,3 +427,14 @@ begin_game(Player_set *pset)
     pnum = mrand(0, 11);
     sendall(newfd, (char *) &pnum, sizeof(pnum));
 */
+
+int
+sendMov( int psock, short int movepno, int x, int y )
+{
+   if( sendshort(movepno,PLAYER_MOV) == 0  || sendshort(movepno,movepno) == 0 ||
+         sendshort(movepno,x) == 0 || sendshort(movepno,y) == 0 )
+   {
+      return -1;
+   }
+   return 0;
+}

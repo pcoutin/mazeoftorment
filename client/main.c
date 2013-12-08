@@ -191,6 +191,11 @@ main(int argc, char *argv[])
          {
          case PLAYER_MOV:
             puts("PLAYER_MOV");
+            int pnum = getshort(srv_sock);
+            int movx = getshort(srv_sock);
+            int movy = getshort(srv_sock);
+            (player+pnum)->x = movx;
+            (player+pnum)->y = movy;
             break;
          case PLAYER_WIN:
             puts("PLAYER_WIN");
