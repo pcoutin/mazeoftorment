@@ -90,6 +90,7 @@ player_byfd(Player_set *s, int fd)
         {
             return this;
         }
+        this = this->next;
     }
     return NULL;
 }
