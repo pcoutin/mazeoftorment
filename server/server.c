@@ -267,6 +267,7 @@ main(int argc, char *argv[])
                 if (game_started)
                 {
                     magic = htons(SRV_BUSY);
+                    sendshort(newfd, magic);
                     close(newfd);
                     continue;
                 }
@@ -407,29 +408,37 @@ void
 begin_game(Player_set *pset)
 {
    unsigned short magic;
-   int i;
-   int hpno = mrand(0,11);
-   
-   for(i=0; i < (pset)->last_pno ; ++i)
+   int j = 0,i = 0;
+   short int hpno = mrand(0,2);
+   Player *cur, *info;
+
+   printf("in begin_game()!!\n");
+
+   for(i = 0; i < pset->last_pno; ++i )
    {
-      Player *cur = player_byindex(pset,i);
-      
-      magic = htons(ADD_PLAYER);
-      sendall( cur->fd, (char *) &magic, sizeof(magic));
-      sendshort( cur->fd, cur->playerno);
-      magic = htons(mrand(0,19) * 2);
-      sendall( cur->fd, (char *) &magic, sizeof(magic));
-      magic = htons(mrand(0,19) * 2);
-      sendall( cur->fd, (char *) &magic, sizeof(magic));
-      sendall( cur->fd, cur->name, sizeof(cur->name));
-
-
-      printf("hunter sent!! hunter is: %d\n", hpno);
+      cur = player_byindex(pset,i);
+      int x,y;
+      for( j = 0; j < pset->last_pno; ++j)
+      {
+         info = player_byindex(pset,j);
+         magic = htons(ADD_PLAYER);
+         sendall( cur->fd, (char *) &magic, sizeof(magic));
+         sendall( cur->fd, (char *) info->playerno, sizeof(info->playerno));
+         info->x = x = mrand(0,19) * 2;
+         magic = htons(x);
+         sendall( cur->fd, (char *) &magic, sizeof(magic));
+         info->y = y = mrand(0,19) * 2;
+         magic = htons(y);
+         sendall( cur->fd, (char *) &magic, sizeof(magic));
+         sendall( cur->fd, info->name, sizeof(info->name));
+      }
       // hunter
-      magic = htonl(HUNTER);
-      sendall( cur->fd, (char *) &magic, sizeof(magic));
+      magic = htons(HUNTER);
+      sendall( cur->fd, (char *) &magic, sizeof(magic) );
       sendall( cur->fd, (char *) &hpno, sizeof(hpno));
+      printf("hunter at %d sent!!!",hpno);
    }
+   printf("out of begin_game()!!\n");
 }
 
 /* add a bunch
