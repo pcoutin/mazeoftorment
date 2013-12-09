@@ -90,6 +90,26 @@ player_byfd(Player_set *s, int fd)
         {
             return this;
         }
+        this = this->next;
+    }
+    return NULL;
+}
+
+/*
+ * blazing fast seeking algorithm
+ */
+Player *
+player_byindex(Player_set *s, int fd)
+{
+    Player *this = s->first;
+    int counter = 0;
+    while (this != NULL)
+    {
+        if (counter++==fd)
+        {
+            return this;
+        }
+        this = this->next;
     }
     return NULL;
 }

@@ -130,6 +130,8 @@ main(int argc, char *argv[])
 
    player = calloc(MAX_PLAYERNUM + 1, sizeof(PLAYER));
 
+   printf("adding players!!\n");
+   
    while ((magic = getshort(srv_sock)) == ADD_PLAYER)
    {
       PLAYER cur_player;
@@ -139,6 +141,7 @@ main(int argc, char *argv[])
             cur_player.playerno, cur_player.x, cur_player.y);
    }
 
+   printf("players added\n");
    me = player + myno;
 
    /*
@@ -159,6 +162,7 @@ main(int argc, char *argv[])
       exit(EXIT_FAILURE);
    }
 
+   printf("HUNTER DECIDED\n");
    /*
     * Draw things.
     */

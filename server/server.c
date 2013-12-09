@@ -121,7 +121,7 @@ main(int argc, char *argv[])
 
     /* Should be moved to config file/cli arg ALONG WITH hostname/port */
     int min_players = 2;
-    time_t time_thresh = 60;
+    time_t time_thresh = 2;
 
     FD_ZERO(&master);    /* Empty the master set */
     FD_ZERO(&read_fds);  /* Empty the readfds set */
@@ -270,14 +270,16 @@ main(int argc, char *argv[])
                     close(newfd);
                     continue;
                 }
-
+                printf("checking if game started!!\n");
                 if (!launchtime) launchtime = time(NULL);
                 players_connected++;
                 handle_connecting_player(newfd, pset);
 
+                printf("new connection handled!!\n");
                 if (time(NULL) - launchtime >= time_thresh &&
                         players_connected >= min_players)
                 {
+                    printf("game started!!\n");
                     begin_game(pset);
                     game_started = 1;
                 }
@@ -398,6 +400,7 @@ handle_connecting_player(int newfd, Player_set *pset)
     pset->last->x = 42;
     pset->last->y = 42;
     pset->last->fd = newfd;
+    printf("new file descriptor:%d and %d\n", pset->last->fd,newfd);
 }
 
 void
@@ -407,23 +410,24 @@ begin_game(Player_set *pset)
    int i;
    int hpno = mrand(0,11);
    
-   for(i=0; (pset)->last_pno; ++i)
+   for(i=0; i < (pset)->last_pno ; ++i)
    {
-      Player *cur = (pset->first) + i;
-     
+      Player *cur = player_byindex(pset,i);
+      
       magic = htons(ADD_PLAYER);
       sendall( cur->fd, (char *) &magic, sizeof(magic));
-      sendall( cur->fd, (char *) cur->playerno, sizeof(cur->playerno));
+      sendshort( cur->fd, cur->playerno);
       magic = htons(mrand(0,19) * 2);
       sendall( cur->fd, (char *) &magic, sizeof(magic));
       magic = htons(mrand(0,19) * 2);
       sendall( cur->fd, (char *) &magic, sizeof(magic));
       sendall( cur->fd, cur->name, sizeof(cur->name));
 
-      // hunter
-      magic = htons(HUNTER);
-      sendall( cur->fd, (char *) &magic, sizeof(magic));
 
+      printf("hunter sent!! hunter is: %d\n", hpno);
+      // hunter
+      magic = htonl(HUNTER);
+      sendall( cur->fd, (char *) &magic, sizeof(magic));
       sendall( cur->fd, (char *) &hpno, sizeof(hpno));
    }
 }
