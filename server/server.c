@@ -432,10 +432,12 @@ begin_game(Player_set *pset)
          info->x = x = mrand(0,19) * 2;
          magic = htons(x);
          sendall( cur->fd, (char *) &magic, sizeof(magic));
+
          info->y = y = mrand(0,19) * 2;
          magic = htons(y);
          sendall( cur->fd, (char *) &magic, sizeof(magic));
-         sendall( cur->fd, info->name, sizeof(info->name));
+
+         sendall( cur->fd, info->name, PNAMELEN);
       }
       // hunter
       magic = htons(HUNTER);

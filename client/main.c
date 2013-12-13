@@ -236,7 +236,7 @@ main(int argc, char *argv[])
       /*
        * Stop drawing things.
        */
-      SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+      SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
       SDL_RenderPresent(renderer);
 
       if (20 > (SDL_GetTicks() - time))
