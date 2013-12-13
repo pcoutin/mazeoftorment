@@ -269,10 +269,14 @@ main(int argc, char *argv[])
                     magic = htons(SRV_BUSY);
                     sendshort(newfd, magic);
                     close(newfd);
+                    FD_CLR(newfd, &master);
                     continue;
                 }
+
                 printf("checking if game started!!\n");
+
                 if (!launchtime) launchtime = time(NULL);
+
                 players_connected++;
                 handle_connecting_player(newfd, pset);
 
@@ -332,13 +336,14 @@ main(int argc, char *argv[])
 
                        Player *justMoved = player_byfd(pset,i);
                        int movPnum = justMoved->playerno;
-                        if (j != ssockfd
-                                && j != i
-                                && sendMov(j,movPnum,x,y) == -1)
-                        {
-                            perror("send");
-                        }
 
+                       if (j != ssockfd
+                               && j != i
+                               && FD_ISSET(j, &master)
+                               && sendMov(j,movPnum,x,y) == -1)
+                       {
+                           perror("send");
+                       }
                     }
                 }
 
@@ -414,16 +419,16 @@ begin_game(Player_set *pset)
 
    printf("in begin_game()!!\n");
 
-   for(i = 0; i < pset->last_pno; ++i )
+   for (i = 0; i < pset->last_pno; ++i)
    {
       cur = player_byindex(pset,i);
-      int x,y;
+      int x, y;
       for( j = 0; j < pset->last_pno; ++j)
       {
          info = player_byindex(pset,j);
          magic = htons(ADD_PLAYER);
          sendall( cur->fd, (char *) &magic, sizeof(magic));
-         sendall( cur->fd, (char *) info->playerno, sizeof(info->playerno));
+         sendall( cur->fd, (char *) &info->playerno, sizeof(info->playerno));
          info->x = x = mrand(0,19) * 2;
          magic = htons(x);
          sendall( cur->fd, (char *) &magic, sizeof(magic));
@@ -436,7 +441,8 @@ begin_game(Player_set *pset)
       magic = htons(HUNTER);
       sendall( cur->fd, (char *) &magic, sizeof(magic) );
       sendall( cur->fd, (char *) &hpno, sizeof(hpno));
-      printf("hunter at %d sent!!!",hpno);
+
+      printf("hunter at %d sent to fd %d!!!\n", hpno, cur->fd);
    }
    printf("out of begin_game()!!\n");
 }
