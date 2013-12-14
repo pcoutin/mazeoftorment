@@ -139,6 +139,7 @@ main(int argc, char *argv[])
       *(player + cur_player.playerno) = cur_player;
       printf("Player %s (%d) connected, at (%d, %d)\n", cur_player.name,
             cur_player.playerno, cur_player.x, cur_player.y);
+      *(player+cur_player.playerno) = cur_player;
    }
 
    printf("players added\n");
@@ -200,12 +201,15 @@ main(int argc, char *argv[])
             int movy = getshort(srv_sock);
             (player+pnum)->x = movx;
             (player+pnum)->y = movy;
+            printf("player %d moved to (%d,%d)\n",
+                        pnum, movx, movy);
             break;
          case PLAYER_WIN:
             puts("PLAYER_WIN");
             break;
          case PLAYER_DC:
             puts("PLAYER_DC");
+            pnum = getshort(srv_sock);
             break;
          }
       }

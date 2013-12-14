@@ -17,7 +17,10 @@ void
 begin_game(Player_set *pset);
 
 int
-sendMov( int psock, short int movepno, int x, int y );
+sendMov(int psock, short int movepno, int x, int y);
+
+void
+broadcast_disconnect(Player_set *pset, int fd);
 
 void *
 get_in_addr(struct sockaddr *sa)
@@ -299,6 +302,12 @@ main(int argc, char *argv[])
                     {
                         /* Client closed connection. */
                         printf("server: socket %d hung up\n", i);
+                        broadcast_disconnect(pset,i);
+                        if(--players_connected < min_players)
+                        {
+                           printf("too few players, accepting more players now\n");
+                           game_started = 0;
+                        }
                     }
                     else
                     {
@@ -339,7 +348,6 @@ main(int argc, char *argv[])
 
                        if (j != ssockfd
                                && j != i
-                               && FD_ISSET(j, &master)
                                && sendMov(j,movPnum,x,y) == -1)
                        {
                            perror("send");
@@ -403,19 +411,66 @@ handle_connecting_player(int newfd, Player_set *pset)
     sendall(newfd, (char *) &pset->last->playerno, sizeof(pnum));
 
     pset->last->name = pname;
-    pset->last->x = 42;
-    pset->last->y = 42;
+    pset->last->x = -1;
+    pset->last->y = -1;
     pset->last->fd = newfd;
     printf("new file descriptor:%d and %d\n", pset->last->fd,newfd);
 }
+
+void
+broadcast_disconnect(Player_set * pset, int fd)
+{
+   Player *cur = player_byfd(pset,fd);
+   int pno = cur->playerno;
+   rm_player(pset,cur);
+   int i;
+   for(i = 0; i < pset->last_pno; ++i)
+   {
+      sendshort(player_byindex(pset,i)->fd,PLAYER_DC);
+      sendshort(player_byindex(pset,i)->fd,pno);
+   }
+}
+   
+
+int
+check_collision(Player_set *pset, short pno)
+{
+   if(pno == 0)
+      return 1;
+   if(player_byindex(pset,pno)->x == player_byindex(pset,pno-1)->x &&
+         player_byindex(pset,pno)->y == player_byindex(pset,pno-1)->y)
+      return 1;
+   else
+      return check_collision(pset,pno-1);
+}
+
+
+void
+set_positions(Player_set *pset)
+{
+   int j, i;
+   for(i = 0; i < pset->last_pno; ++i)
+   {
+      int check = 0;
+      while(!check)
+      {
+         player_byindex(pset,i)->x = mrand(0,19) * 2;
+         player_byindex(pset,i)->y = mrand(0,19) * 2;
+         check = check_collision(pset,i);
+      }
+   }
+}
+         
 
 void
 begin_game(Player_set *pset)
 {
    unsigned short magic;
    int j = 0,i = 0;
-   short int hpno = mrand(0,2);
+   short int hpno = mrand(0,pset->last_pno);
    Player *cur, *info;
+
+   set_positions(pset);
 
    printf("in begin_game()!!\n");
 
@@ -429,12 +484,10 @@ begin_game(Player_set *pset)
          magic = htons(ADD_PLAYER);
          sendall( cur->fd, (char *) &magic, sizeof(magic));
          sendall( cur->fd, (char *) &info->playerno, sizeof(info->playerno));
-         info->x = x = mrand(0,19) * 2;
-         magic = htons(x);
+         magic = htons(info->x);
          sendall( cur->fd, (char *) &magic, sizeof(magic));
 
-         info->y = y = mrand(0,19) * 2;
-         magic = htons(y);
+         magic = htons(info->y);
          sendall( cur->fd, (char *) &magic, sizeof(magic));
 
          sendall( cur->fd, info->name, PNAMELEN);
@@ -448,6 +501,7 @@ begin_game(Player_set *pset)
    }
    printf("out of begin_game()!!\n");
 }
+
 
 /* add a bunch
  * player no
@@ -475,8 +529,8 @@ begin_game(Player_set *pset)
 int
 sendMov( int psock, short int movepno, int x, int y )
 {
-   if( sendshort(movepno,PLAYER_MOV) == 0  || sendshort(movepno,movepno) == 0 ||
-         sendshort(movepno,x) == 0 || sendshort(movepno,y) == 0 )
+   if( sendshort(psock,PLAYER_MOV) == 0  || sendshort(psock,movepno) == 0 ||
+         sendshort(psock,x) == 0 || sendshort(psock,y) == 0 )
    {
       return -1;
    }
