@@ -1,6 +1,6 @@
 CC=		clang
-CFLAGS=		-Wall -O2 -c
-LDFLAGS=	-lGL -lSDL2 -lSDL2_image -lSDL2_net
+CFLAGS=		-Wall -O2 -c -I/usr/local/include
+LDFLAGS=	-L/usr/local/lib -lGL -lSDL2 -lSDL2_image -lSDL2_net
 
 OBJFILES=	main.o cfg.o maze.o picture.o player.o ini.o net.o
 
