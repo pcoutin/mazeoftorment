@@ -6,7 +6,7 @@ client/*.o
 client/clc
 client/mot
 server/mazegen
-server/mot_server
+server/motserver
 bin/*
 .*
 *.swp
