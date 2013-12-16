@@ -27,9 +27,10 @@ main(int argc, char *argv[])
    IPaddress   srv_ip;
    TCPsocket   srv_sock;
    Uint16      magic;
+   int         i;
+   SDLNet_SocketSet srv_sset;
    char myname[PNAME_SIZE];
    unsigned char myno;
-   int i;
 
    if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS) == -1)
    {
@@ -80,6 +81,21 @@ main(int argc, char *argv[])
       fprintf(stderr, "SDLNet_TCP_Open: %s\n", SDLNet_GetError());
       exit(EXIT_FAILURE);
    }
+
+
+   /*
+    * Add (a single) server socket to srv_sset for cheap hack for checking
+    * the server socket's state.
+    */
+   srv_sset = SDLNet_AllocSocketSet(1);
+
+   if (!srv_sset)
+   {
+      printf("SDLNet_AllocSocketSet: %s\n", SDLNet_GetError());
+      exit(EXIT_FAILURE);
+   }
+
+   SDLNet_TCP_AddSocket(srv_sset, srv_sock);
 
 
    /*
@@ -174,10 +190,13 @@ main(int argc, char *argv[])
 
    drawPlayer(me);
 
-
-   for (i = 0; (player + i)->sprite != NULL; ++i)
+   for (i = 0; i < MAX_PLAYERNUM; ++i)
    {
-      drawPlayer(player + i);
+      if ((player + i) != NULL && (player + i)->sprite != NULL)
+      {
+         printf("drew player %d\n", i);
+         drawPlayer(player + i);
+      }
    }
 
    /*
@@ -188,9 +207,17 @@ main(int argc, char *argv[])
       time = SDL_GetTicks();
 
       /*
-       * Poll the network
+       * Poll the network in each frame. Because.
        */
-      if (SDLNet_SocketReady(srv_sock))
+
+      int numready = SDLNet_CheckSockets(srv_sset, 0);
+
+      if (numready == -1)
+      {
+         printf("SDLNet_CheckSockets: %s\n", SDLNet_GetError());
+         perror("SDLNet_CheckSockets");
+      }
+      else if (numready)
       {
          switch(getshort(srv_sock))
          {
