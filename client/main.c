@@ -190,10 +190,13 @@ main(int argc, char *argv[])
 
    drawPlayer(me);
 
-
-   for (i = 0; (player + i)->sprite != NULL; ++i)
+   for (i = 0; i < MAX_PLAYERNUM; ++i)
    {
-      drawPlayer(player + i);
+      if ((player + i) != NULL && (player + i)->sprite != NULL)
+      {
+         printf("drew player %d\n", i);
+         drawPlayer(player + i);
+      }
    }
 
    /*
