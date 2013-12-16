@@ -421,13 +421,15 @@ broadcast_disconnect(Player_set * pset, int fd)
 {
    Player *cur = player_byfd(pset,fd);
    int pno = cur->playerno;
-   rm_player(pset,cur);
    int i;
+
    for(i = 0; i < pset->last_pno; ++i)
    {
       sendshort(player_byindex(pset,i)->fd,PLAYER_DC);
       sendshort(player_byindex(pset,i)->fd,pno);
    }
+
+   rm_player(pset,cur);
 }
    
 
