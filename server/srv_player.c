@@ -91,6 +91,7 @@ player_byfd(Player_set *s, int fd)
             return this;
         }
         this = this->next;
+<<<<<<< HEAD
     }
     return NULL;
 }
@@ -110,6 +111,8 @@ player_byindex(Player_set *s, int fd)
             return this;
         }
         this = this->next;
+=======
+>>>>>>> 71d350d78ea8a2ff0b5b57fa6e935dad5739b294
     }
     return NULL;
 }
