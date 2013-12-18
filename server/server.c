@@ -419,15 +419,21 @@ handle_connecting_player(int newfd, Player_set *pset)
 void
 broadcast_disconnect(Player_set * pset, int fd)
 {
+   printf("broadcdc\n");
    Player *cur = player_byfd(pset,fd);
    int pno = cur->playerno;
    int i;
+   printf("player that dide : %d at %d\n", pno, fd);
    for(i = 0; i < pset->last_pno; ++i)
    {
-      sendshort(player_byindex(pset,i)->fd,PLAYER_DC);
-      sendshort(player_byindex(pset,i)->fd,pno);
+      printf("iteration %d\n",player_byindex(pset,i)->playerno);
+      if(i +1 != pno)
+      {
+         sendshort(player_byindex(pset,i)->fd,PLAYER_DC);
+         sendshort(player_byindex(pset,i)->fd,pno);
+         printf("dc pushed to %d\n",player_byindex(pset,i)->playerno);
+      }
    }
-
    rm_player(pset,cur);
    printf("broadcasted disconnect of socket %d\n",fd);
 }

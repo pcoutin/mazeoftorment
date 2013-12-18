@@ -46,7 +46,7 @@ add_player(Player_set *set)
         set->last->next = calloc(1, sizeof(Player));
         set->cur = set->last = set->last->next;
     }
-    set->last->playerno = ++set->last_pno;
+    set->last->playerno = ++(set->last_pno);
 }
 
 void
@@ -71,7 +71,7 @@ rm_player(Player_set *set, Player *p)
     {
         set->last = p->prev;
     }
-
+    set->last_pno--;
     free(p->name);
     free(p);
 }
