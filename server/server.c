@@ -299,7 +299,8 @@ main(int argc, char *argv[])
                if (nbytes == 0)
                {
                   printf("server: socket %d hung up\n", i);
-                  broadcast_disconnect(pset,i);
+                  broadcast_disconnect(pset, i);
+
                   if(--players_connected < min_players)
                   {
                      printf("too few players, accepting more players now\n");

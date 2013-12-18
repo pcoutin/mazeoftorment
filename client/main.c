@@ -207,7 +207,7 @@ main(int argc, char *argv[])
       time = SDL_GetTicks();
 
       /*
-       * Poll the network in each frame. Because.
+       * Poll the  network in each frame. Because.
        */
 
       int numready = SDLNet_CheckSockets(srv_sset, 0);
@@ -219,27 +219,33 @@ main(int argc, char *argv[])
       }
       else if (numready)
       {
-         switch(getshort(srv_sock))
+         unsigned short packet;
+
+         if (SDLNet_TCP_Recv(srv_sock, &packet, 2) == 2)
          {
-         case PLAYER_MOV:
-            puts("PLAYER_MOV");
-            int pnum = getshort(srv_sock);
-            int movx = getshort(srv_sock);
-            int movy = getshort(srv_sock);
-            (player+pnum)->x = movx;
-            (player+pnum)->y = movy;
-            printf("player %d moved to (%d,%d)\n",
-                        pnum, movx, movy);
-            break;
-         case PLAYER_WIN:
-            puts("PLAYER_WIN");
-            break;
-         case PLAYER_DC:
-            puts("PLAYER_DC");
-            pnum = getshort(srv_sock);
-            break;
+            switch (SDLNet_Read16(&packet))
+            {
+            case PLAYER_MOV:
+               puts("PLAYER_MOV");
+               int pnum = getshort(srv_sock);
+               int movx = getshort(srv_sock);
+               int movy = getshort(srv_sock);
+               (player+pnum)->x = movx;
+               (player+pnum)->y = movy;
+               printf("player %d moved to (%d,%d)\n",
+                           pnum, movx, movy);
+               break;
+            case PLAYER_WIN:
+               puts("PLAYER_WIN");
+               break;
+            case PLAYER_DC:
+               puts("PLAYER_DC");
+               pnum = getshort(srv_sock);
+               break;
+            }
          }
       }
+      puts("k");
 
       /*
        * Poll for keys
