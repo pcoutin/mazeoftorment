@@ -300,7 +300,6 @@ main(int argc, char *argv[])
                {
                   printf("server: socket %d hung up\n", i);
                   broadcast_disconnect(pset, i);
-
                   if(--players_connected < min_players)
                   {
                      printf("too few players, accepting more players now\n");
@@ -423,7 +422,6 @@ broadcast_disconnect(Player_set * pset, int fd)
    Player *cur = player_byfd(pset,fd);
    int pno = cur->playerno;
    int i;
-
    for(i = 0; i < pset->last_pno; ++i)
    {
       sendshort(player_byindex(pset,i)->fd,PLAYER_DC);
@@ -431,6 +429,7 @@ broadcast_disconnect(Player_set * pset, int fd)
    }
 
    rm_player(pset,cur);
+   printf("broadcasted disconnect of socket %d\n",fd);
 }
    
 

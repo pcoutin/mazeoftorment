@@ -230,8 +230,10 @@ main(int argc, char *argv[])
                int pnum = getshort(srv_sock);
                int movx = getshort(srv_sock);
                int movy = getshort(srv_sock);
+               clearPlayer(player + pnum);
                (player+pnum)->x = movx;
                (player+pnum)->y = movy;
+               drawPlayer(player + pnum);
                printf("player %d moved to (%d,%d)\n",
                            pnum, movx, movy);
                break;
@@ -245,7 +247,6 @@ main(int argc, char *argv[])
             }
          }
       }
-      puts("k");
 
       /*
        * Poll for keys
@@ -266,10 +267,7 @@ main(int argc, char *argv[])
 
          local_player_update(srv_sock, me, player, SDL_GetKeyboardState(NULL));
       }
-
       SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
-
-
       /*
        * Stop drawing things.
        */
