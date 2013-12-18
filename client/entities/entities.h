@@ -29,6 +29,8 @@ void drawPlayer(PLAYER *);
 
 void local_player_update(TCPsocket sock, PLAYER *, PLAYER *, const Uint8 *);
 
+void movePlayer(PLAYER *p, short newx, short newy);
+
 void clearPlayer(PLAYER *);
 
 

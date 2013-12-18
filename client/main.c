@@ -236,6 +236,7 @@ main(int argc, char *argv[])
                drawPlayer(player + pnum);
                printf("player %d moved to (%d,%d)\n",
                            pnum, movx, movy);
+               movePlayer(player + pnum, movx, movy);
                break;
             case PLAYER_WIN:
                puts("PLAYER_WIN");
