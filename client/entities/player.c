@@ -122,6 +122,16 @@ local_player_update(TCPsocket sock, PLAYER *me, PLAYER *remote,
 }
 
 void
+movePlayer(PLAYER *p, short newx, short newy)
+{
+   clearPlayer(p);
+   p->x = newx;
+   p->y = newy;
+   clearPlayer(p);
+   drawPlayer(p);
+}
+
+void
 drawPlayer(PLAYER *player)
 {
    if (player->dead)

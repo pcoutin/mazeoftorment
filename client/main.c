@@ -234,6 +234,7 @@ main(int argc, char *argv[])
                (player+pnum)->y = movy;
                printf("player %d moved to (%d,%d)\n",
                            pnum, movx, movy);
+               movePlayer(player + pnum, movx, movy);
                break;
             case PLAYER_WIN:
                puts("PLAYER_WIN");
@@ -245,7 +246,6 @@ main(int argc, char *argv[])
             }
          }
       }
-      puts("k");
 
       /*
        * Poll for keys
