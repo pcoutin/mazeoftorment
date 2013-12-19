@@ -230,10 +230,7 @@ main(int argc, char *argv[])
                int pnum = getshort(srv_sock);
                int movx = getshort(srv_sock);
                int movy = getshort(srv_sock);
-<<<<<<< HEAD
-=======
 
->>>>>>> 681c623e9dd71796f3b7e9ac6df091ea6d686b5a
                printf("player %d moved to (%d,%d)\n",
                            pnum, movx, movy);
                movePlayer(player + pnum, movx, movy);
