@@ -99,17 +99,29 @@ player_byfd(Player_set *s, int fd)
  * blazing fast seeking algorithm
  */
 Player *
-player_byindex(Player_set *s, int fd)
+player_byindex(Player_set *s, int index)
 {
     Player *this = s->first;
     int counter = 0;
     while (this != NULL)
     {
-        if (counter++==fd)
+        if (counter++ == index)
         {
             return this;
         }
         this = this->next;
     }
     return NULL;
+}
+
+void
+pset_map(Player_set *s, void (*func)(Player *p, int a), int fd)
+{
+   Player *this = s->first;
+
+   while (this != NULL)
+   {
+      func(this, fd);
+      this = this->next;
+   }
 }

@@ -416,28 +416,21 @@ handle_connecting_player(int newfd, Player_set *pset)
    printf("new file descriptor:%d and %d\n", pset->last->fd,newfd);
 }
 
-void
-broadcast_disconnect(Player_set * pset, int fd)
+static void
+send_dc(Player *p, int pno_removed)
 {
-   printf("broadcdc\n");
-   Player *cur = player_byfd(pset,fd);
-   int pno = cur->playerno;
-   int i;
-   printf("player that dide : %d at %d\n", pno, fd);
-   for(i = 0; i < pset->last_pno; ++i)
-   {
-      printf("iteration %d\n",player_byindex(pset,i)->playerno);
-      if(i +1 != pno)
-      {
-         sendshort(player_byindex(pset,i)->fd,PLAYER_DC);
-         sendshort(player_byindex(pset,i)->fd,pno);
-         printf("dc pushed to %d\n",player_byindex(pset,i)->playerno);
-      }
-   }
-   rm_player(pset,cur);
-   printf("broadcasted disconnect of socket %d\n",fd);
+   sendshort(p->fd, PLAYER_DC);
+   sendshort(p->fd, pno_removed);
 }
-   
+
+void
+broadcast_disconnect(Player_set *pset, int fd)
+{
+   Player *to_remove = player_byfd(pset, fd);
+   rm_player(pset, to_remove);
+
+   pset_map(pset, &send_dc, to_remove->playerno);
+}
 
 int
 check_collision(Player_set *pset, short pno)
