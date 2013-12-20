@@ -427,9 +427,10 @@ void
 broadcast_disconnect(Player_set *pset, int fd)
 {
    Player *to_remove = player_byfd(pset, fd);
+   int remove_pno = to_remove->playerno;
    rm_player(pset, to_remove);
 
-   pset_map(pset, &send_dc, to_remove->playerno);
+   pset_map(pset, &send_dc, remove_pno);
 }
 
 int
