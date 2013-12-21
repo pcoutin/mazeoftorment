@@ -21,6 +21,9 @@ struct _mot_player
    unsigned char playerno;
    unsigned char dead;
 
+   PLAYER *next;
+   PLAYER *prev;
+
 };
 
 void init_player(TCPsocket sock, PLAYER *player);

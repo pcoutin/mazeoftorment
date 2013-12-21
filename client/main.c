@@ -14,6 +14,93 @@
 #include "mot.h"
 #include "net.h"
 
+
+void
+removep(PLAYER* temp)
+{
+   if(temp->prev == NULL)
+   {
+      if(temp->next != NULL)
+      {
+         temp->next->prev = NULL;
+      }
+   }
+   else
+   {
+      if(temp->next == NULL)
+      {
+         temp->prev->next = NULL;
+      }
+      else
+      {
+         temp->prev->next = temp->next;
+         temp->next->prev = temp->prev;
+      }
+   }
+   free(temp);
+}
+
+void
+choose_hunter(PLAYER *node, unsigned char hpno, PICTURE *hsprite)
+{
+   PLAYER *temp;
+   for(temp = node; temp != NULL; temp = temp->next)
+   {
+      if(temp->playerno == hpno)
+      {
+         temp->type = 1;
+         temp->sprite = hsprite;
+         break;
+      }
+   }
+}
+
+
+void
+add_player(PLAYER *node, PLAYER *newp)
+{
+   PLAYER *temp;
+   for(temp = node; temp->next != NULL; temp = temp->next);
+   temp->next = newp;
+   newp->prev = temp;
+   newp->next = NULL;
+}
+
+unsigned char
+addp(PLAYER* node,TCPsocket srv_sock)
+{
+   Uint16 magic;
+   do
+   {
+      PLAYER cur_player;
+      init_player(srv_sock, &cur_player);
+      add_player(node,&cur_player);
+      printf("Player %s (%d) connected, at (%d, %d)\n", cur_player.name,
+            cur_player.playerno, cur_player.x, cur_player.y);
+   }while ((magic = getshort(srv_sock)) == ADD_PLAYER);
+   
+   printf("players added\n");
+   
+   /*
+    * Get the hunter.
+    */
+   if (magic == HUNTER)
+   {
+      unsigned char hunter;
+
+      SDLNet_TCP_Recv(srv_sock, &hunter, 1);
+      return hunter;
+   }
+   else
+   {
+      fprintf(stderr, "Bad magic number %X from server\n", magic);
+      exit(EXIT_FAILURE);
+   }
+
+
+}
+
+
 int
 main(int argc, char *argv[])
 {
@@ -225,23 +312,30 @@ main(int argc, char *argv[])
          {
             switch (SDLNet_Read16(&packet))
             {
-            case PLAYER_MOV:
-               puts("PLAYER_MOV");
-               int pnum = getshort(srv_sock);
-               int movx = getshort(srv_sock);
-               int movy = getshort(srv_sock);
+               case PLAYER_MOV:
+                  puts("PLAYER_MOV");
+                  int pnum = getshort(srv_sock);
+                  int movx = getshort(srv_sock);
+                  int movy = getshort(srv_sock);
 
-               printf("player %d moved to (%d,%d)\n",
-                           pnum, movx, movy);
-               movePlayer(player + pnum, movx, movy);
-               break;
-            case PLAYER_WIN:
-               puts("PLAYER_WIN");
-               break;
-            case PLAYER_DC:
-               puts("PLAYER_DC");
-               pnum = getshort(srv_sock);
-               break;
+                  printf("player %d moved to (%d,%d)\n",
+                              pnum, movx, movy);
+                  movePlayer(player + pnum, movx, movy);
+                  break;
+               case PLAYER_WIN:
+                  puts("PLAYER_WIN");
+                  break;
+               case PLAYER_DC:
+                  puts("PLAYER_DC");
+                  pnum = getshort(srv_sock);
+                  clearPlayer(player+pnum);
+                  removep(player+pnum);
+                  break;
+               case ADD_PLAYER:
+                  unsigned char hunter;
+                  hunter = addp(player,srv_sock);
+                  choose_hunter(player,hunter,&hsprite);
+                  break;
             }
          }
       }

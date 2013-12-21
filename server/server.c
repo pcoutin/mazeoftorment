@@ -316,7 +316,6 @@ main(int argc, char *argv[])
                FD_CLR(i, &master);
                continue;
             }
-
             switch (htons(magic))
             {
                case PLAYER_MOV:
