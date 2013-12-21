@@ -306,7 +306,8 @@ main(int argc, char *argv[])
       }
       else if (numready)
       {
-         unsigned short packet;
+         unsigned short packet, hunter;
+         int pnum, movx, movy;
 
          if (SDLNet_TCP_Recv(srv_sock, &packet, 2) == 2)
          {
@@ -314,9 +315,9 @@ main(int argc, char *argv[])
             {
                case PLAYER_MOV:
                   puts("PLAYER_MOV");
-                  int pnum = getshort(srv_sock);
-                  int movx = getshort(srv_sock);
-                  int movy = getshort(srv_sock);
+                  pnum = getshort(srv_sock);
+                  movx = getshort(srv_sock);
+                  movy = getshort(srv_sock);
 
                   printf("player %d moved to (%d,%d)\n",
                               pnum, movx, movy);
@@ -332,7 +333,6 @@ main(int argc, char *argv[])
                   removep(player+pnum);
                   break;
                case ADD_PLAYER:
-                  unsigned char hunter;
                   hunter = addp(player,srv_sock);
                   choose_hunter(player,hunter,&hsprite);
                   break;
