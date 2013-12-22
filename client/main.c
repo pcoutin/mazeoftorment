@@ -33,21 +33,25 @@ choose_player(PLAYER* node, unsigned char pnum)
 void
 removep(PLAYER* temp)
 {
+<<<<<<< HEAD
    if(temp == NULL)
    {
       printf("Can't remove NULL player!!\n");
       return;
    }
    if(temp->prev == NULL)
+=======
+   if (temp->prev == NULL)
+>>>>>>> 8ad1ea1052e4cdf4d1a77f4561b8610f220031f3
    {
-      if(temp->next != NULL)
+      if (temp->next != NULL)
       {
          temp->next->prev = NULL;
       }
    }
    else
    {
-      if(temp->next == NULL)
+      if (temp->next == NULL)
       {
          temp->prev->next = NULL;
       }
@@ -65,9 +69,13 @@ void
 choose_hunter(PLAYER *node, unsigned char hpno)
 {
    PLAYER *temp;
+<<<<<<< HEAD
    for(temp = node->next; temp != NULL; temp = temp->next)
+=======
+   for (temp = node; temp != NULL; temp = temp->next)
+>>>>>>> 8ad1ea1052e4cdf4d1a77f4561b8610f220031f3
    {
-      if(temp->playerno == hpno)
+      if (temp->playerno == hpno)
       {
          temp->type = 1;
          temp->sprite = &hsprite;
@@ -81,10 +89,14 @@ void
 add_player(PLAYER *node, PLAYER *newp)
 {
    PLAYER *temp;
+<<<<<<< HEAD
    for(temp = node; temp->next != NULL; temp = temp->next)
    {
       printf("cycle: temp->next->playerno: %d\n",temp->next->playerno);
    }
+=======
+   for (temp = node; temp->next != NULL; temp = temp->next);
+>>>>>>> 8ad1ea1052e4cdf4d1a77f4561b8610f220031f3
    temp->next = newp;
    newp->prev = temp;
    newp->next = NULL;
@@ -101,7 +113,7 @@ addp(PLAYER* node,TCPsocket srv_sock)
       add_player(node,&cur_player);
       printf("Player %s (%d) connected, at (%d, %d)\n", cur_player.name,
             cur_player.playerno, cur_player.x, cur_player.y);
-   }while ((magic = getshort(srv_sock)) == ADD_PLAYER);
+   } while ((magic = getshort(srv_sock)) == ADD_PLAYER);
    
    printf("players added\n");
    
