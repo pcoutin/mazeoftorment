@@ -134,15 +134,18 @@ movePlayer(PLAYER *p, short newx, short newy)
 void
 drawPlayer(PLAYER *player)
 {
+   printf("inside drawplayer()!!\n");
    if (player->dead)
    {
       return;
    }
    player->sprite->rect.x = MAZE.X + player->x * TILE_WIDTH + 10;
    player->sprite->rect.y = MAZE.Y + player->y * TILE_HEIGHT + 10;
+   printf("changed player sprite!!\n");
    SDL_RenderCopy(renderer,
          player->sprite->texture,
          NULL, &player->sprite->rect);
+   printf("exiting drawplayer()!!\n");
 }
 
 /*

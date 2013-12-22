@@ -428,42 +428,57 @@ broadcast_disconnect(Player_set *pset, int fd)
    Player *to_remove = player_byfd(pset, fd);
    int remove_pno = to_remove->playerno;
    rm_player(pset, to_remove);
-
    pset_map(pset, &send_dc, remove_pno);
 }
 
 int
-check_collision(Player_set *pset, short pno)
+check_collision(Player_set *pset, Player* node)
 {
-   if (pno == 0)
+   if (node == pset->first)
       return 1;
-
-   if (player_byindex(pset,pno)->x == player_byindex(pset,pno-1)->x &&
-         player_byindex(pset,pno)->y == player_byindex(pset,pno-1)->y)
-      return 1;
-   else
-      return check_collision(pset,pno-1);
+   Player *temp;
+   for(temp = pset->first; temp != NULL && temp != node; temp = temp->next)
+   {
+      if(temp->x == node->x && temp->y == node->y)
+         return 0;
+   }
+   return 1;
 }
 
 
 void
 set_positions(Player_set *pset)
 {
-   int j, i;
-
-   for(i = 0; i < pset->last_pno; ++i)
+   Player *temp;
+   for(temp = pset->first; temp != NULL; temp = temp->next)
    {
-      int check = 0;
-      while(!check)
+      do
       {
-         player_byindex(pset,i)->x = mrand(0,19) * 2;
-         player_byindex(pset,i)->y = mrand(0,19) * 2;
-         check = check_collision(pset,i);
-      }
+         temp->x = mrand(0,19) * 2;
+         temp->y = mrand(0,19) * 2;
+      }while(!check_collision(pset,temp));
    }
 }
-         
 
+
+short int
+choose_hunter(Player_set *pset)
+{
+   int check = 0;
+   Player *temp;
+   while(!check)
+   {
+      int hpno = mrand(0,pset->last_pno);
+      for(temp = pset->first; temp != NULL; temp = temp->next)
+      {
+         if(temp->playerno == hpno)
+         {
+            return hpno;
+         }
+      }
+   }
+   return 0;
+}
 void
 begin_game(Player_set *pset)
 {
@@ -471,39 +486,29 @@ begin_game(Player_set *pset)
    int j = 0,i = 0;
    short int hpno = mrand(0,pset->last_pno);
    Player *cur, *info;
-
    set_positions(pset);
-
+   printf("postions set!!\n");
+   choose_hunter(pset);
    printf("in begin_game()!!\n");
-
-   for (i = 0; i < pset->last_pno; ++i)
+   for (cur = pset->first; cur != NULL; cur = cur->next)
    {
-      cur = player_byindex(pset,i);
-
-      for (j = 0; j < pset->last_pno; ++j)
+      for (info = pset->first; info != NULL; info = info->next)
       {
-         info = player_byindex(pset,j);
          magic = htons(ADD_PLAYER);
          sendall(cur->fd, (char *) &magic, sizeof(magic));
          sendall(cur->fd, (char *) &info->playerno, sizeof(info->playerno));
-
          magic = htons(info->x);
          sendall(cur->fd, (char *) &magic, sizeof(magic));
-
          magic = htons(info->y);
          sendall(cur->fd, (char *) &magic, sizeof(magic));
-
          sendall(cur->fd, info->name, PNAMELEN);
       }
-
       // hunter
       magic = htons(HUNTER);
       sendall(cur->fd, (char *) &magic, sizeof(magic));
       sendall(cur->fd, (char *) &hpno, sizeof(hpno));
-
       printf("hunter at %d sent to fd %d!!!\n", hpno, cur->fd);
    }
-
    printf("out of begin_game()!!\n");
 }
 
