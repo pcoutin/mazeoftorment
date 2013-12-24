@@ -103,6 +103,7 @@ addp(PLAYER *node,TCPsocket srv_sock)
       cur_player = calloc(1,sizeof(PLAYER));
       init_player(srv_sock,cur_player);
       add_player(node,cur_player);
+
       printf("Player %s (%d) connected, at (%d, %d)\n", cur_player->name,
             cur_player->playerno, cur_player->x, cur_player->y);
 
