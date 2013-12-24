@@ -15,9 +15,29 @@
 #include "net.h"
 
 
+PLAYER*
+choose_player(PLAYER* node, unsigned char pnum)
+{
+   PLAYER *temp;
+   for(temp = node->next; temp != NULL; temp = temp->next)
+   {  
+      printf("temp->playerno = %d, pnum = %d\n",temp->playerno,pnum);
+      if(temp->playerno == pnum)
+      {
+         break;
+      }
+   }
+   return temp;
+}
+
 void
 removep(PLAYER *temp)
 {
+   if(temp == NULL)
+   {
+      printf("Can't remove NULL player!!\n");
+      return;
+   }
    if (temp->prev == NULL)
    {
       if (temp->next != NULL)
@@ -37,20 +57,22 @@ removep(PLAYER *temp)
          temp->next->prev = temp->prev;
       }
    }
+   clearPlayer(temp);
    free(temp);
 }
 
 void
-choose_hunter(PLAYER *node, unsigned char hpno, PICTURE *hsprite)
+choose_hunter(PLAYER *node, unsigned char hpno)
 {
    PLAYER *temp;
+
    for (temp = node; temp != NULL; temp = temp->next)
    {
       if (temp->playerno == hpno)
       {
          temp->type = 1;
-         temp->sprite = hsprite;
-         break;
+         temp->sprite = &hsprite;
+         return;
       }
    }
 }
@@ -61,29 +83,34 @@ add_player(PLAYER *node, PLAYER *newp)
 {
    PLAYER *temp;
    for (temp = node; temp->next != NULL; temp = temp->next);
+   {
+      printf("cycle: temp->next->playerno: %d\n",temp->next->playerno);
+   }
+   for (temp = node; temp->next != NULL; temp = temp->next);
+
    temp->next = newp;
    newp->prev = temp;
    newp->next = NULL;
 }
 
 unsigned char
-addp(PLAYER* node,TCPsocket srv_sock)
+addp(PLAYER *node,TCPsocket srv_sock)
 {
    Uint16 magic;
+   PLAYER *cur_player = NULL;
+
    do
    {
-      PLAYER cur_player;
-      init_player(srv_sock, &cur_player);
-      add_player(node,&cur_player);
-      printf("Player %s (%d) connected, at (%d, %d)\n", cur_player.name,
-            cur_player.playerno, cur_player.x, cur_player.y);
+      cur_player = calloc(1,sizeof(PLAYER));
+      init_player(srv_sock,cur_player);
+      add_player(node,cur_player);
+      printf("Player %s (%d) connected, at (%d, %d)\n", cur_player->name,
+            cur_player->playerno, cur_player->x, cur_player->y);
+
    } while ((magic = getshort(srv_sock)) == ADD_PLAYER);
    
    printf("players added\n");
    
-   /*
-    * Get the hunter.
-    */
    if (magic == HUNTER)
    {
       unsigned char hunter;
@@ -229,65 +256,31 @@ main(int argc, char *argv[])
     */
 
    SDLNet_TCP_Recv(srv_sock, &myno, 1);
-
-   player = calloc(MAX_PLAYERNUM + 1, sizeof(PLAYER));
-
-   printf("adding players!!\n");
-   
-   while ((magic = getshort(srv_sock)) == ADD_PLAYER)
-   {
-      PLAYER cur_player;
-      init_player(srv_sock, &cur_player);
-      *(player + cur_player.playerno) = cur_player;
-      printf("Player %s (%d) connected, at (%d, %d)\n", cur_player.name,
-            cur_player.playerno, cur_player.x, cur_player.y);
-      *(player+cur_player.playerno) = cur_player;
-   }
-
-   printf("players added\n");
-   me = player + myno;
-
-   /*
-    * Get the hunter.
-    */
-   if (magic == HUNTER)
-   {
-      unsigned char hunter;
-
-      SDLNet_TCP_Recv(srv_sock, &hunter, 1);
-
-      (player + hunter)->type = 1;
-      (player + hunter)->sprite = &hsprite;
-   }
-   else
-   {
-      fprintf(stderr, "Bad magic number %X from server\n", magic);
-      exit(EXIT_FAILURE);
-   }
-
-   printf("HUNTER DECIDED\n");
-   /*
-    * Draw things.
-    */
-   SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
-
-   /* Draw the maze in the middle of the screen! And draw the players */
+   player = calloc(1, sizeof(PLAYER));
    draw_maze(MAZE.X, MAZE.Y);
 
-   drawPlayer(me);
 
-   for (i = 0; i < MAX_PLAYERNUM; ++i)
+   if(!((magic = getshort(srv_sock)) == ADD_PLAYER))
    {
-      if ((player + i) != NULL && (player + i)->sprite != NULL)
-      {
-         printf("drew player %d\n", i);
-         drawPlayer(player + i);
-      }
+      printf("server not sending players\n!");
+      exit(EXIT_FAILURE);
    }
-
+   unsigned char hunter = addp(player,srv_sock);
+   choose_hunter(player,hunter);
+   me = choose_player(player,myno);
+   draw_maze(MAZE.X, MAZE.Y);
+   PLAYER *temp;
+   for (temp = player->next; temp != NULL; temp = temp->next)
+   {
+      printf("drew player %d\n", temp->playerno);
+      drawPlayer(temp);
+   }
+   
+   printf("starting game!!\n");
    /*
     * Game loop!
     */
+   
    for (;;)
    {
       time = SDL_GetTicks();
@@ -305,9 +298,9 @@ main(int argc, char *argv[])
       }
       else if (numready)
       {
-         unsigned short packet, hunter;
-         int pnum, movx, movy;
-
+         unsigned char packet, hunter;
+         unsigned char pnum, movx, movy;
+         printf("srv socket is ready!!\n");
          if (SDLNet_TCP_Recv(srv_sock, &packet, 2) == 2)
          {
             switch (SDLNet_Read16(&packet))
@@ -320,7 +313,7 @@ main(int argc, char *argv[])
 
                   printf("player %d moved to (%d,%d)\n",
                               pnum, movx, movy);
-                  movePlayer(player + pnum, movx, movy);
+                  movePlayer(choose_player(player,pnum), movx, movy);
                   break;
                case PLAYER_WIN:
                   puts("PLAYER_WIN");
@@ -328,12 +321,24 @@ main(int argc, char *argv[])
                case PLAYER_DC:
                   puts("PLAYER_DC");
                   pnum = getshort(srv_sock);
-                  clearPlayer(player+pnum);
-                  removep(player+pnum);
+                  printf("Player %d disconnected!!\n", pnum);
+                  removep(choose_player(player,pnum));
                   break;
                case ADD_PLAYER:
+                  printf("ADD_PLAYER\n");
                   hunter = addp(player,srv_sock);
-                  choose_hunter(player,hunter,&hsprite);
+                  choose_hunter(player,hunter);
+                  me = choose_player(player,myno);
+                  draw_maze(MAZE.X, MAZE.Y);
+                  PLAYER *temp;
+                  for (temp = player->next; temp != NULL; temp = temp->next)
+                  {
+                     if (temp != NULL && temp->sprite != NULL)
+                     {
+                        printf("drew player %d\n", temp->playerno);
+                        drawPlayer(temp);
+                     }
+                  }
                   break;
             }
          }
