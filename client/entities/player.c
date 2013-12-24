@@ -144,7 +144,7 @@ drawPlayer(PLAYER *player)
    printf("changed player sprite!!\n");
    SDL_RenderCopy(renderer,
          player->sprite->texture,
-         NULL, &player->sprite->rect);
+         NULL, &(player->sprite->rect));
    printf("exiting drawplayer()!!\n");
 }
 

@@ -97,14 +97,14 @@ unsigned char
 addp(PLAYER *node,TCPsocket srv_sock)
 {
    Uint16 magic;
+   PLAYER *cur_player = NULL;
    do
    {
-      PLAYER cur_player;
-      init_player(srv_sock, &cur_player);
-      add_player(node,&cur_player);
-
-      printf("Player %s (%d) connected, at (%d, %d)\n", cur_player.name,
-            cur_player.playerno, cur_player.x, cur_player.y);
+      cur_player = calloc(1,sizeof(PLAYER));
+      init_player(srv_sock,cur_player);
+      add_player(node,cur_player);
+      printf("Player %s (%d) connected, at (%d, %d)\n", cur_player->name,
+            cur_player->playerno, cur_player->x, cur_player->y);
 
    } while ((magic = getshort(srv_sock)) == ADD_PLAYER);
    
@@ -256,7 +256,7 @@ main(int argc, char *argv[])
     */
 
    SDLNet_TCP_Recv(srv_sock, &myno, 1);
-   player = calloc(MAX_PLAYERNUM + 1, sizeof(PLAYER));
+   player = calloc(1, sizeof(PLAYER));
    draw_maze(MAZE.X, MAZE.Y);
 
 
