@@ -258,19 +258,23 @@ main(int argc, char *argv[])
 
    SDLNet_TCP_Recv(srv_sock, &myno, 1);
    player = calloc(1, sizeof(PLAYER));
-   draw_maze(MAZE.X, MAZE.Y);
 
-
-   if(!((magic = getshort(srv_sock)) == ADD_PLAYER))
+   if (!((magic = getshort(srv_sock)) == ADD_PLAYER))
    {
       printf("server not sending players\n!");
       exit(EXIT_FAILURE);
    }
+
    unsigned char hunter = addp(player,srv_sock);
+
    choose_hunter(player,hunter);
    me = choose_player(player,myno);
+
+   SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
    draw_maze(MAZE.X, MAZE.Y);
+
    PLAYER *temp;
+
    for (temp = player->next; temp != NULL; temp = temp->next)
    {
       printf("drew player %d\n", temp->playerno);
@@ -331,6 +335,7 @@ main(int argc, char *argv[])
                   choose_hunter(player,hunter);
                   me = choose_player(player,myno);
                   draw_maze(MAZE.X, MAZE.Y);
+
                   PLAYER *temp;
                   for (temp = player->next; temp != NULL; temp = temp->next)
                   {
@@ -364,10 +369,7 @@ main(int argc, char *argv[])
 
          local_player_update(srv_sock, me, player, SDL_GetKeyboardState(NULL));
       }
-      SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
-      /*
-       * Stop drawing things.
-       */
+
       SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
       SDL_RenderPresent(renderer);
 
