@@ -324,6 +324,9 @@ main(int argc, char *argv[])
                   Player *coll;
                   int movPnum = justMoved->playerno;
 
+                  justMoved->x = x;
+                  justMoved->y = y;
+
                   /*
                    * If the player that just moved is a hunter, and it
                    * just stepped on a regular player, kill the (regular)
@@ -471,21 +474,19 @@ set_positions(Player_set *pset)
 short int
 choose_hunter(Player_set *pset)
 {
-   int check = 0;
    Player *temp;
-   while (!check)
-   {
-      int hpno = mrand(1, pset->last_pno);
 
-      for (temp = pset->first; temp != NULL; temp = temp->next)
+   unsigned int hpno = mrand(1, pset->last_pno);
+
+   for (temp = pset->first; temp != NULL; temp = temp->next)
+   {
+      if (temp->playerno == hpno)
       {
-         if (temp->playerno == hpno)
-         {
-            return hpno;
-         }
+         temp->type = 1;
+         return hpno;
       }
    }
-   return 0;
+   return -1;
 }
 
 
@@ -493,14 +494,14 @@ void
 begin_game(Player_set *pset)
 {
    unsigned short magic;
+   unsigned char hpno;
    int j = 0,i = 0;
-   short int hpno = mrand(0, pset->last_pno);
    Player *cur, *info;
 
    set_positions(pset);
    printf("postions set!!\n");
 
-   choose_hunter(pset);
+   hpno = choose_hunter(pset);
 
    for (cur = pset->first; cur != NULL; cur = cur->next)
    {

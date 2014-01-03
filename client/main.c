@@ -189,7 +189,7 @@ main(int argc, char *argv[])
       }
       else if (numready)
       {
-         unsigned char packet, hunter;
+         unsigned char packet;
          unsigned char pnum, movx, movy;
 
          printf("srv socket is ready!!\n");
@@ -230,26 +230,9 @@ main(int argc, char *argv[])
                      goto exit;
                   }
                   printf("Player %d deaded!!!!!\n", pnum);
-                  removep(choose_player(player,pnum));
+                  removep(choose_player(player, pnum));
                   break;
 
-               case ADD_PLAYER:
-                  printf("ADD_PLAYER\n");
-                  hunter = addp(player,srv_sock);
-                  choose_hunter(player,hunter);
-                  me = choose_player(player,myno);
-                  draw_maze(MAZE.X, MAZE.Y);
-
-                  PLAYER *temp;
-                  for (temp = player->next; temp != NULL; temp = temp->next)
-                  {
-                     if (temp != NULL && temp->sprite != NULL)
-                     {
-                        printf("drew player %d\n", temp->playerno);
-                        drawPlayer(temp);
-                     }
-                  }
-                  break;
             }
          }
       }

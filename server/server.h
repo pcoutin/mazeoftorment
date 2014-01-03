@@ -59,7 +59,9 @@ void add_player(Player_set *set);
 void rm_player(Player_set *set, Player *p);
 Player *player_byfd(Player_set *s, int fd);
 Player *player_byindex(Player_set *s, int fd);
-void pset_map(Player_set *s, void (*func)(), int fd, unsigned short sig);
+void pset_map(Player_set *s,
+      void (*func)(Player *p, int a, unsigned short sig), int fd,
+      unsigned short sig);
 
 int mrand(int floor, int ceil);
 void handle_connecting_player(int newfd, Player_set *pset);
