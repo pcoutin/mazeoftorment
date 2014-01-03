@@ -47,6 +47,11 @@ struct _player_set
     int last_pno;
 };
 
+void begin_game(Player_set *pset);
+int sendMov(int psock, short int movepno, int x, int y);
+void broadcast_disconnect(Player_set *pset, int fd);
+
+
 Player_set *init_pset();
 void free_pset(Player_set *p);
 void add_player(Player_set *set);

@@ -14,119 +14,6 @@
 #include "mot.h"
 #include "net.h"
 
-
-PLAYER*
-choose_player(PLAYER* node, unsigned char pnum)
-{
-   PLAYER *temp;
-   for(temp = node->next; temp != NULL; temp = temp->next)
-   {  
-      printf("temp->playerno = %d, pnum = %d\n",temp->playerno,pnum);
-      if(temp->playerno == pnum)
-      {
-         break;
-      }
-   }
-   return temp;
-}
-
-void
-removep(PLAYER *temp)
-{
-   if(temp == NULL)
-   {
-      printf("Can't remove NULL player!!\n");
-      return;
-   }
-   if (temp->prev == NULL)
-   {
-      if (temp->next != NULL)
-      {
-         temp->next->prev = NULL;
-      }
-   }
-   else
-   {
-      if (temp->next == NULL)
-      {
-         temp->prev->next = NULL;
-      }
-      else
-      {
-         temp->prev->next = temp->next;
-         temp->next->prev = temp->prev;
-      }
-   }
-   clearPlayer(temp);
-   free(temp);
-}
-
-void
-choose_hunter(PLAYER *node, unsigned char hpno)
-{
-   PLAYER *temp;
-
-   for (temp = node; temp != NULL; temp = temp->next)
-   {
-      if (temp->playerno == hpno)
-      {
-         temp->type = 1;
-         temp->sprite = &hsprite;
-         return;
-      }
-   }
-}
-
-
-void
-add_player(PLAYER *node, PLAYER *newp)
-{
-   PLAYER *temp;
-   for (temp = node; temp->next != NULL; temp = temp->next);
-   {
-      printf("cycle: temp->next->playerno: %d\n",temp->next->playerno);
-   }
-   for (temp = node; temp->next != NULL; temp = temp->next);
-
-   temp->next = newp;
-   newp->prev = temp;
-   newp->next = NULL;
-}
-
-unsigned char
-addp(PLAYER *node,TCPsocket srv_sock)
-{
-   Uint16 magic;
-   PLAYER *cur_player = NULL;
-
-   do
-   {
-      cur_player = calloc(1,sizeof(PLAYER));
-      init_player(srv_sock,cur_player);
-      add_player(node,cur_player);
-      printf("Player %s (%d) connected, at (%d, %d)\n", cur_player->name,
-            cur_player->playerno, cur_player->x, cur_player->y);
-
-   } while ((magic = getshort(srv_sock)) == ADD_PLAYER);
-   
-   printf("players added\n");
-   
-   if (magic == HUNTER)
-   {
-      unsigned char hunter;
-
-      SDLNet_TCP_Recv(srv_sock, &hunter, 1);
-      return hunter;
-   }
-   else
-   {
-      fprintf(stderr, "Bad magic number %X from server\n", magic);
-      exit(EXIT_FAILURE);
-   }
-
-}
-
-
 int
 main(int argc, char *argv[])
 {
@@ -257,19 +144,23 @@ main(int argc, char *argv[])
 
    SDLNet_TCP_Recv(srv_sock, &myno, 1);
    player = calloc(1, sizeof(PLAYER));
-   draw_maze(MAZE.X, MAZE.Y);
 
-
-   if(!((magic = getshort(srv_sock)) == ADD_PLAYER))
+   if (!((magic = getshort(srv_sock)) == ADD_PLAYER))
    {
       printf("server not sending players\n!");
       exit(EXIT_FAILURE);
    }
+
    unsigned char hunter = addp(player,srv_sock);
+
    choose_hunter(player,hunter);
    me = choose_player(player,myno);
+
+   SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
    draw_maze(MAZE.X, MAZE.Y);
+
    PLAYER *temp;
+
    for (temp = player->next; temp != NULL; temp = temp->next)
    {
       printf("drew player %d\n", temp->playerno);
@@ -330,6 +221,7 @@ main(int argc, char *argv[])
                   choose_hunter(player,hunter);
                   me = choose_player(player,myno);
                   draw_maze(MAZE.X, MAZE.Y);
+
                   PLAYER *temp;
                   for (temp = player->next; temp != NULL; temp = temp->next)
                   {
@@ -363,10 +255,7 @@ main(int argc, char *argv[])
 
          local_player_update(srv_sock, me, player, SDL_GetKeyboardState(NULL));
       }
-      SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
-      /*
-       * Stop drawing things.
-       */
+
       SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
       SDL_RenderPresent(renderer);
 
