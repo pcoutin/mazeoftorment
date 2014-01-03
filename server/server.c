@@ -12,13 +12,6 @@
 #include "../common/mot_maze.h"
 #include "server.h"
 
-
-void begin_game(Player_set *pset);
-
-int sendMov(int psock, short int movepno, int x, int y);
-
-void broadcast_disconnect(Player_set *pset, int fd);
-
 void *
 get_in_addr(struct sockaddr *sa)
 {
@@ -300,13 +293,6 @@ main(int argc, char *argv[])
                {
                   printf("server: socket %d hung up\n", i);
                   broadcast_disconnect(pset, i);
-                  if(--players_connected < min_players)
-                  {
-                     printf("too few players, accepting more players now\n");
-
-                     /* DON'T HALT THE GAME, THOUGH */
-                     game_started = 0;
-                  }
                }
                else
                {
@@ -479,6 +465,8 @@ choose_hunter(Player_set *pset)
    }
    return 0;
 }
+
+
 void
 begin_game(Player_set *pset)
 {
@@ -503,6 +491,7 @@ begin_game(Player_set *pset)
          sendall(cur->fd, (char *) &magic, sizeof(magic));
          sendall(cur->fd, info->name, PNAMELEN);
       }
+
       // hunter
       magic = htons(HUNTER);
       sendall(cur->fd, (char *) &magic, sizeof(magic));
@@ -512,29 +501,6 @@ begin_game(Player_set *pset)
    printf("out of begin_game()!!\n");
 }
 
-
-/* add a bunch
- * player no
-    magic = htons(ADD_PLAYER);
-    sendall(newfd, (char *) &magic, sizeof(magic));
-    sendall(newfd, (char *) &pnum, sizeof(pnum));
-    x and y, there can be collisions but who cares??????
-    magic = htons(mrand(0, 19) * 2);
-    sendall(newfd, (char *) &magic, sizeof(magic));
-
-    magic = htons(mrand(0, 19) * 2);
-    sendall(newfd, (char *) &magic, sizeof(magic));
-
-    sendall(newfd, pname, 32);
-    }
-
-    // random hunter
-    magic = htons(HUNTER);
-    sendall(newfd, (char *) &magic, sizeof(magic));
-
-    pnum = mrand(0, 11);
-    sendall(newfd, (char *) &pnum, sizeof(pnum));
-*/
 
 int
 sendMov(int psock, short int movepno, int x, int y)
