@@ -115,8 +115,8 @@ player_byindex(Player_set *s, int index)
 }
 
 void
-pset_map(Player_set *s, void (*func)(Player *p, int a, unsigned int sig),
-		int fd, unsigned int sig)
+pset_map(Player_set *s, void (*func)(Player *p, int a, unsigned short sig),
+		int fd, unsigned short sig)
 {
    Player *this = s->first;
 

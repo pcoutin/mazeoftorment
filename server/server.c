@@ -93,7 +93,7 @@ int
 main(int argc, char *argv[])
 {
    int ssockfd, csockfd, err;;
-   unsigned int magic, x, y;
+   unsigned short magic, x, y;
    unsigned int u;
    struct addrinfo hints, *srvinfo, *p;
    struct sockaddr_storage caddr;
@@ -293,7 +293,7 @@ main(int argc, char *argv[])
 
             if ((nbytes = recv(i, &magic, sizeof magic, 0 )) <= 0)
             {
-	       if (nbytes < 0)
+               if (nbytes < 0)
                {
                   perror("recv");
                }
@@ -324,11 +324,11 @@ main(int argc, char *argv[])
                   Player *coll;
                   int movPnum = justMoved->playerno;
 
-		  /*
-		   * If the player that just moved is a hunter, and it
-		   * just stepped on a regular player, kill the (regular)
-		   * player!
-		   */
+                  /*
+                   * If the player that just moved is a hunter, and it
+                   * just stepped on a regular player, kill the (regular)
+                   * player!
+                   */
                   if (justMoved->type &&
                         (coll = check_collision(pset, justMoved)) != NULL)
                   {
@@ -340,10 +340,10 @@ main(int argc, char *argv[])
                      FD_CLR(dead, &master);
                   }
 
-		  /*
-		   * Avoid sending the data to the current client and
-		   * server.
-		   */
+                  /*
+                   * Avoid sending the data to the current client and
+                   * server.
+                   */
                   if (j != ssockfd
                         && j != i
                         && sendMov(j, movPnum, x, y) == -1)
@@ -374,7 +374,7 @@ handle_connecting_player(int newfd, Player_set *pset)
 {
    char *pname;
    unsigned char pnum;
-   unsigned int magic;
+   unsigned short magic;
    unsigned int u;
 
    /*
@@ -416,7 +416,7 @@ handle_connecting_player(int newfd, Player_set *pset)
 }
 
 static void
-send_dc(Player *p, int pno_removed, unsigned int sig)
+send_dc(Player *p, int pno_removed, unsigned short sig)
 {
    sendshort(p->fd, sig);
    sendshort(p->fd, pno_removed);
@@ -492,7 +492,7 @@ choose_hunter(Player_set *pset)
 void
 begin_game(Player_set *pset)
 {
-   unsigned int magic;
+   unsigned short magic;
    int j = 0,i = 0;
    short int hpno = mrand(0, pset->last_pno);
    Player *cur, *info;
