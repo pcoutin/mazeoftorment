@@ -31,7 +31,7 @@ sendall(int s, char *buf, size_t len)
    int bytesleft = len;    // how many we have left to send
    int n;
 
-   while(total < len)
+   while (total < len)
    {
       n = send(s, buf+total, bytesleft, 0);
 
@@ -78,18 +78,22 @@ getshort(int sock)
    return ntohs(ret);
 }
 
+/*
+ * Return: 0 on success
+ *         1 on failure
+ */
 size_t
 sendshort(int sock, short s)
 {
    s = htons(s);
-   return send(sock, &s, sizeof(s), 0);
+   return sendall(sock, (char *) &s, sizeof(s)) != sizeof(s);
 }
 
 int
 main(int argc, char *argv[])
 {
    int ssockfd, csockfd, err;;
-   unsigned short magic, x, y;
+   unsigned int magic, x, y;
    unsigned int u;
    struct addrinfo hints, *srvinfo, *p;
    struct sockaddr_storage caddr;
@@ -289,19 +293,19 @@ main(int argc, char *argv[])
 
             if ((nbytes = recv(i, &magic, sizeof magic, 0 )) <= 0)
             {
-               if (nbytes == 0)
-               {
-                  printf("server: socket %d hung up\n", i);
-                  broadcast_disconnect(pset, i);
-               }
-               else
+	       if (nbytes < 0)
                {
                   perror("recv");
                }
+
+               printf("server: socket %d hung up\n", i);
+               broadcast_disconnect(pset, i, 0);
                close(i);
                FD_CLR(i, &master);
+
                continue;
             }
+
             switch (htons(magic))
             {
                case PLAYER_MOV:
@@ -309,30 +313,40 @@ main(int argc, char *argv[])
                   y = getshort(i);
                   printf("player with socket %d moved to %d, %d\n",
                         i, x, y);
-                  /*
-                   * now send it to everyone. non blocking TCP?
-                   * broadcast function?
-                   */
                   break;
             }
-
-            /* we got some data to read,son */
 
             for (j = 0; j <= fdmax; j++)
             {
                if (FD_ISSET(j, &master))
                {
-                  /*
-                   * don't send it to server and the client
-                   * who sent the data
-                   */
-
-                  Player *justMoved = player_byfd(pset,i);
+                  Player *justMoved = player_byfd(pset, i);
+                  Player *coll;
                   int movPnum = justMoved->playerno;
 
+		  /*
+		   * If the player that just moved is a hunter, and it
+		   * just stepped on a regular player, kill the (regular)
+		   * player!
+		   */
+                  if (justMoved->type &&
+                        (coll = check_collision(pset, justMoved)) != NULL)
+                  {
+                     int dead = coll->fd;
+
+                     printf("%s died, socket %d dropped.\n", coll->name, dead);
+                     broadcast_disconnect(pset, dead, 1);
+                     close(dead);
+                     FD_CLR(dead, &master);
+                  }
+
+		  /*
+		   * Avoid sending the data to the current client and
+		   * server.
+		   */
                   if (j != ssockfd
                         && j != i
-                        && sendMov(j,movPnum,x,y) == -1)
+                        && sendMov(j, movPnum, x, y) == -1)
                   {
                      perror("send");
                   }
@@ -360,7 +374,7 @@ handle_connecting_player(int newfd, Player_set *pset)
 {
    char *pname;
    unsigned char pnum;
-   unsigned short magic;
+   unsigned int magic;
    unsigned int u;
 
    /*
@@ -398,37 +412,44 @@ handle_connecting_player(int newfd, Player_set *pset)
    pset->last->x = -1;
    pset->last->y = -1;
    pset->last->fd = newfd;
-   printf("new file descriptor:%d and %d\n", pset->last->fd,newfd);
+   printf("new file descriptor: %d (%d)\n", pset->last->fd,newfd);
 }
 
 static void
-send_dc(Player *p, int pno_removed)
+send_dc(Player *p, int pno_removed, unsigned int sig)
 {
-   sendshort(p->fd, PLAYER_DC);
+   sendshort(p->fd, sig);
    sendshort(p->fd, pno_removed);
 }
 
+/*
+ * Remove player with file descriptor fd from the list, and broadcast its
+ * disconnecting.
+ */
 void
-broadcast_disconnect(Player_set *pset, int fd)
+broadcast_disconnect(Player_set *pset, int fd, int death)
 {
    Player *to_remove = player_byfd(pset, fd);
    int remove_pno = to_remove->playerno;
    rm_player(pset, to_remove);
-   pset_map(pset, &send_dc, remove_pno);
+   pset_map(pset, &send_dc, remove_pno, death ? PLAYER_DIE : PLAYER_DC);
 }
 
-int
-check_collision(Player_set *pset, Player* node)
+/*
+ * Check if some player in `pset' has the same x, y as `node'. Return the
+ * first player that is colliding, or NULL if there are no collisions.
+ */
+Player *
+check_collision(Player_set *pset, Player *node)
 {
-   if (node == pset->first)
-      return 1;
    Player *temp;
-   for(temp = pset->first; temp != NULL && temp != node; temp = temp->next)
+
+   for (temp = pset->first; temp != NULL; temp = temp->next)
    {
-      if(temp->x == node->x && temp->y == node->y)
-         return 0;
+      if (temp != node && temp->x == node->x && temp->y == node->y)
+         return temp;
    }
-   return 1;
+   return NULL;
 }
 
 
@@ -436,13 +457,13 @@ void
 set_positions(Player_set *pset)
 {
    Player *temp;
-   for(temp = pset->first; temp != NULL; temp = temp->next)
+   for (temp = pset->first; temp != NULL; temp = temp->next)
    {
       do
       {
          temp->x = mrand(0,19) * 2;
          temp->y = mrand(0,19) * 2;
-      }while(!check_collision(pset,temp));
+      } while (check_collision(pset, temp) != NULL);
    }
 }
 
@@ -452,12 +473,13 @@ choose_hunter(Player_set *pset)
 {
    int check = 0;
    Player *temp;
-   while(!check)
+   while (!check)
    {
-      int hpno = mrand(0,pset->last_pno);
-      for(temp = pset->first; temp != NULL; temp = temp->next)
+      int hpno = mrand(1, pset->last_pno);
+
+      for (temp = pset->first; temp != NULL; temp = temp->next)
       {
-         if(temp->playerno == hpno)
+         if (temp->playerno == hpno)
          {
             return hpno;
          }
@@ -470,14 +492,16 @@ choose_hunter(Player_set *pset)
 void
 begin_game(Player_set *pset)
 {
-   unsigned short magic;
+   unsigned int magic;
    int j = 0,i = 0;
-   short int hpno = mrand(0,pset->last_pno);
+   short int hpno = mrand(0, pset->last_pno);
    Player *cur, *info;
+
    set_positions(pset);
    printf("postions set!!\n");
+
    choose_hunter(pset);
-   printf("in begin_game()!!\n");
+
    for (cur = pset->first; cur != NULL; cur = cur->next)
    {
       for (info = pset->first; info != NULL; info = info->next)
@@ -496,6 +520,7 @@ begin_game(Player_set *pset)
       magic = htons(HUNTER);
       sendall(cur->fd, (char *) &magic, sizeof(magic));
       sendall(cur->fd, (char *) &hpno, sizeof(hpno));
+
       printf("hunter at %d sent to fd %d!!!\n", hpno, cur->fd);
    }
    printf("out of begin_game()!!\n");
@@ -505,8 +530,10 @@ begin_game(Player_set *pset)
 int
 sendMov(int psock, short int movepno, int x, int y)
 {
-   if (sendshort(psock,PLAYER_MOV) == 0  || sendshort(psock,movepno) == 0 ||
-         sendshort(psock,x) == 0 || sendshort(psock,y) == 0)
+   if (sendshort(psock, PLAYER_MOV) ||
+         sendshort(psock, movepno)  ||
+         sendshort(psock, x)        ||
+         sendshort(psock, y))
    {
       return -1;
    }

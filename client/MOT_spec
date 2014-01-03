@@ -13,7 +13,7 @@ SRV_BUSY       0xEEEE
 
 MAX_PLAYERNUM  32
 
-all the magic numbers will be unsigned short...
+all the magic numbers will be uint16_t...
 
 TYPES
 unsigned short    magical instruction things
@@ -67,7 +67,8 @@ A player wins
 * send unsigned char pnum
 
 Player disconnects/loses/get hunted
-* send PLAYER_DC
+* send PLAYER_DC for disconnect
+* send PLAYER_DIE for lose
 * send unsigned char pnum
 > clear the player from the screen
 

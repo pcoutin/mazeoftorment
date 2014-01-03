@@ -151,10 +151,10 @@ main(int argc, char *argv[])
       exit(EXIT_FAILURE);
    }
 
-   unsigned char hunter = addp(player,srv_sock);
+   unsigned char hunter = addp(player, srv_sock);
 
-   choose_hunter(player,hunter);
-   me = choose_player(player,myno);
+   choose_hunter(player, hunter);
+   me = choose_player(player, myno);
 
    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
    draw_maze(MAZE.X, MAZE.Y);
@@ -191,7 +191,9 @@ main(int argc, char *argv[])
       {
          unsigned char packet, hunter;
          unsigned char pnum, movx, movy;
+
          printf("srv socket is ready!!\n");
+
          if (SDLNet_TCP_Recv(srv_sock, &packet, 2) == 2)
          {
             switch (SDLNet_Read16(&packet))
@@ -206,15 +208,31 @@ main(int argc, char *argv[])
                               pnum, movx, movy);
                   movePlayer(choose_player(player,pnum), movx, movy);
                   break;
+
                case PLAYER_WIN:
                   puts("PLAYER_WIN");
                   break;
+
                case PLAYER_DC:
                   puts("PLAYER_DC");
                   pnum = getshort(srv_sock);
                   printf("Player %d disconnected!!\n", pnum);
                   removep(choose_player(player,pnum));
                   break;
+
+               case PLAYER_DIE:
+                  puts("PLAYER_DIE");
+                  pnum = getshort(srv_sock);
+
+                  if (pnum == myno)
+                  {
+                     puts("YOU ARE DEAD\nGAME OVER");
+                     goto exit;
+                  }
+                  printf("Player %d deaded!!!!!\n", pnum);
+                  removep(choose_player(player,pnum));
+                  break;
+
                case ADD_PLAYER:
                   printf("ADD_PLAYER\n");
                   hunter = addp(player,srv_sock);
@@ -265,6 +283,7 @@ main(int argc, char *argv[])
       }
    }
 
+exit:
    SDL_DestroyTexture(psprite.texture);
    SDL_DestroyTexture(hsprite.texture);
    SDL_DestroyTexture(black.texture);
