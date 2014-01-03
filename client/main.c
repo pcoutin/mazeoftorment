@@ -180,7 +180,7 @@ main(int argc, char *argv[])
        * Poll the  network in each frame. Because.
        */
 
-      int numready = SDLNet_CheckSockets(srv_sset, 0);
+      int result, numready = SDLNet_CheckSockets(srv_sset, 0);
 
       if (numready == -1)
       {
@@ -194,7 +194,7 @@ main(int argc, char *argv[])
 
          printf("srv socket is ready!!\n");
 
-         if (SDLNet_TCP_Recv(srv_sock, &packet, 2) == 2)
+         if ((result = SDLNet_TCP_Recv(srv_sock, &packet, 2)) == 2)
          {
             switch (SDLNet_Read16(&packet))
             {
@@ -234,6 +234,12 @@ main(int argc, char *argv[])
                   break;
 
             }
+         }
+         else if (result <= 0)
+         {
+            fprintf(stderr, "SDLNet_TCP_Recv: %s\n", SDLNet_GetError());
+            fprintf(stderr, "Lost connection to the server?\n");
+            break;
          }
       }
 

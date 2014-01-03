@@ -38,6 +38,7 @@ sendall(int s, char *buf, size_t len)
       if (n == -1)
       {
          perror("sendall");
+         fprintf(stderr, "sendall: Tried to send to socket %d\n", s);
          return total;
       }
 
@@ -289,6 +290,8 @@ main(int argc, char *argv[])
          }
          else
          {
+            Player *justMoved;
+            int movPnum;
             /* Handle data from a client. (ONLY A SHORT/magic no) */
 
             if ((nbytes = recv(i, &magic, sizeof magic, 0 )) <= 0)
@@ -311,8 +314,17 @@ main(int argc, char *argv[])
                case PLAYER_MOV:
                   x = getshort(i);
                   y = getshort(i);
-                  printf("player with socket %d moved to %d, %d\n",
-                        i, x, y);
+
+                  // A bit of a lack of error checking...
+                  justMoved = player_byfd(pset, i);
+                  movPnum = justMoved->playerno;
+
+                  justMoved->x = x;
+                  justMoved->y = y;
+
+                  printf("PLAYER [%s](fd %d)\t - Moved to (%d, %d)\n",
+                        justMoved->name, i, x, y);
+
                   break;
             }
 
@@ -320,12 +332,7 @@ main(int argc, char *argv[])
             {
                if (FD_ISSET(j, &master))
                {
-                  Player *justMoved = player_byfd(pset, i);
                   Player *coll;
-                  int movPnum = justMoved->playerno;
-
-                  justMoved->x = x;
-                  justMoved->y = y;
 
                   /*
                    * If the player that just moved is a hunter, and it
@@ -337,10 +344,14 @@ main(int argc, char *argv[])
                   {
                      int dead = coll->fd;
 
+                     print_pset(pset);
+
                      printf("%s died, socket %d dropped.\n", coll->name, dead);
                      broadcast_disconnect(pset, dead, 1);
                      close(dead);
                      FD_CLR(dead, &master);
+
+                     print_pset(pset);
                   }
 
                   /*
@@ -438,24 +449,6 @@ broadcast_disconnect(Player_set *pset, int fd, int death)
    pset_map(pset, &send_dc, remove_pno, death ? PLAYER_DIE : PLAYER_DC);
 }
 
-/*
- * Check if some player in `pset' has the same x, y as `node'. Return the
- * first player that is colliding, or NULL if there are no collisions.
- */
-Player *
-check_collision(Player_set *pset, Player *node)
-{
-   Player *temp;
-
-   for (temp = pset->first; temp != NULL; temp = temp->next)
-   {
-      if (temp != node && temp->x == node->x && temp->y == node->y)
-         return temp;
-   }
-   return NULL;
-}
-
-
 void
 set_positions(Player_set *pset)
 {
@@ -464,12 +457,11 @@ set_positions(Player_set *pset)
    {
       do
       {
-         temp->x = mrand(0,19) * 2;
-         temp->y = mrand(0,19) * 2;
+         temp->x = mrand(0, MAZE.width - 1) * 2;
+         temp->y = mrand(0, MAZE.width - 1) * 2;
       } while (check_collision(pset, temp) != NULL);
    }
 }
-
 
 short int
 choose_hunter(Player_set *pset)
