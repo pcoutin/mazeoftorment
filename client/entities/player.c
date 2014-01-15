@@ -5,6 +5,10 @@
 #include "../mot.h"
 #include "../net.h"
 
+/*
+ * TODO: Always error-check after calling calloc.
+ */
+
 void
 init_player(TCPsocket sock, PLAYER *player)
 {
