@@ -9,3 +9,7 @@ On *nix, the client should build if you have SDL, SDL_net and SDL_image
 anything special besides POSIX sockets, probably libev or maybe select(),
 and the srand48 and drand48 functions, which are present at least on
 Linux, FreeBSD and OpenBSD.
+
+todo:
+* make the killed player receive the PLAYER_DEATH info
+* ...
